@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// import 'package:sicksense/left_bar/leftBar.dart';
-// import 'package:sicksense/right_bar/rightbar.dart';
+import 'package:sick_sense_mobile/nav_bar/leftBar.dart';
+import 'package:sick_sense_mobile/nav_bar/rightbar.dart';
 
 class Chat extends StatefulWidget {
   const Chat({super.key});
@@ -128,10 +128,10 @@ Widget LeftButton(BuildContext context) {
   return IconButton(
     onPressed: () {
       // Điều hướng tới trang LeftBar
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => LeftBar()),
-      // );
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => LeftBar()),
+      );
     },
     icon: const Icon(Icons.menu),
   );
@@ -140,10 +140,10 @@ Widget LeftButton(BuildContext context) {
 Widget RightButton(BuildContext context) {
   return IconButton(
     onPressed: () {
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => RightBar()),
-      // );
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => RightBar()),
+      );
     },
     icon: const Icon(Icons.more_vert),
   );

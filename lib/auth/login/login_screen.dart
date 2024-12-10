@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:sick_sense_mobile/auth/home_screen.dart';
 import 'package:sick_sense_mobile/auth/signup/sign_up_screen.dart';
 import 'package:sick_sense_mobile/auth/comfirm/recovery_email_address.dart';
+import 'package:sick_sense_mobile/pages/change_password.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,8 +16,22 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
-
   bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Kiểm tra trạng thái đăng nhập ngay khi ứng dụng khởi động
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        // Nếu người dùng đã đăng nhập, chuyển đến màn hình chính
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      }
+    });
+  }
 
   signIn() async {
     setState(() {
@@ -28,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Kiểm tra nếu người dùng đã đăng nhập thành công
       if (FirebaseAuth.instance.currentUser != null) {
-        // Chuyển đến màn hình chính (hoặc RightBar)
+        // Chuyển đến màn hình chính
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -51,9 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: CircularProgressIndicator(),
           )
         : Scaffold(
-            // appBar: AppBar(
-            //   title: Text("Login"),
-            // ),
             backgroundColor: Colors.white,
             body: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -62,14 +74,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   // Hình ảnh nhân vật nằm ở phía trên email
                   Image.asset(
-                    'assets/images/doctor_cartoon.png', // Đặt hình ảnh nhân vật tại đây
-                    height: 300, // Chỉnh kích thước của hình ảnh
+                    'assets/images/doctor_cartoon.png',
+                    height: 300,
                   ),
-                  SizedBox(
-                      height:
-                          30), // Khoảng cách giữa hình ảnh và trường nhập email
-
-                  // Trường nhập email
+                  SizedBox(height: 30),
                   TextField(
                     controller: email,
                     decoration: InputDecoration(
@@ -85,8 +93,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   SizedBox(height: 20),
-
-                  // Trường nhập mật khẩu
                   TextField(
                     controller: password,
                     obscureText: true,
@@ -107,35 +113,28 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   SizedBox(height: 30),
-
-                  // Nút đăng nhập
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple, // Màu nền của nút
-                      minimumSize: const Size(
-                          double.infinity, 50), // Kích thước tối thiểu
+                      backgroundColor: Colors.purple,
+                      minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(8), // Bo góc cho nút
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    onPressed: (() => signIn()), // Hàm xử lý khi nút được nhấn
+                    onPressed: signIn,
                     child: const Text(
-                      'Đăng nhập', // Văn bản của nút
+                      'Đăng nhập',
                       style: TextStyle(
-                        fontSize: 18, // Kích thước chữ
-                        color: Colors.white, // Màu chữ
+                        fontSize: 18,
+                        color: Colors.white,
                       ),
                     ),
                   ),
                   SizedBox(height: 20),
-
-                  // Nút đăng ký
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                          "Bạn chưa có tài khoản? "), // Văn bản "Bạn chưa có tài khoản?"
+                      const Text("Bạn chưa có tài khoản? "),
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -145,31 +144,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                         child: const Text(
-                          "Đăng ký", // Văn bản "Đăng ký"
+                          "Đăng ký",
                           style: TextStyle(
-                            color: Colors.purple, // Màu chữ là tím
-                            fontWeight: FontWeight.bold, // Đặt chữ đậm nếu cần
+                            color: Colors.purple,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: 20),
-
-                  // Nút quên mật khẩu
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       GestureDetector(
                         onTap: () {
-                          Get.to(
-                              RecoveryEmailAddress()); // Chuyển đến màn hình Đăng ký khi nhấn
+                          Get.to(RecoveryEmailAddress());
                         },
                         child: const Text(
-                          "Quên mật khẩu?", // Văn bản "Đăng ký"
+                          "Quên mật khẩu?",
                           style: TextStyle(
-                            color: Colors.purple, // Màu chữ là tím
-                            fontWeight: FontWeight.bold, // Đặt chữ đậm nếu cần
+                            color: Colors.purple,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),

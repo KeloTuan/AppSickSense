@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/auth/login/login_screen.dart';
+import 'package:sick_sense_mobile/auth/login/wrapper.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -61,7 +62,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       // Navigate to the next screen
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const Wrapper()),
       );
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
