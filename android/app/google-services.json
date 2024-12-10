@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "416817352897",
+    "project_id": "sicksensemobile",
+    "storage_bucket": "sicksensemobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:416817352897:android:ee5c68b5db97a83eaf0440",
+        "android_client_info": {
+          "package_name": "com.example.sick_sense_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA68aIoamr5MiSX8S3MOSD4rTgVlG11Ywk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
