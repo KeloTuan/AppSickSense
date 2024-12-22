@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/auth/login/login_screen.dart';
+import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:sick_sense_mobile/setting/setting.dart';
 //import 'package:sicksense/map/screens/pharmacy_search_screen.dart';
 
@@ -27,20 +28,21 @@ class RightBar extends StatelessWidget {
           Container(
             color: Colors.white,
             width: MediaQuery.of(context).size.width * 0.2,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                IconButton(
+            child: Padding(
+              padding:
+                  const EdgeInsets.only(top: 30.0), // Adjust the top padding
+              child: Align(
+                alignment: Alignment.topLeft, // Keep it aligned to the left
+                child: IconButton(
                   icon: const Icon(Icons.menu, size: 32),
                   onPressed: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(builder: (context) => Chat()),
-                    // );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Chat()),
+                    );
                   },
                 ),
-              ],
+              ),
             ),
           ),
 
