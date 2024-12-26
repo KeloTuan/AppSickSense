@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.sick_sense_mobile">
     <application
-        android:label="sick_sense_mobile"
+        android:label="Sick Sense"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -26,24 +26,19 @@ class RightBar extends StatelessWidget {
         children: [
           // Phần trái 20% (Nút menu)
           Container(
-            color: Colors.white,
             width: MediaQuery.of(context).size.width * 0.2,
-            child: Padding(
-              padding:
-                  const EdgeInsets.only(top: 30.0), // Adjust the top padding
-              child: Align(
-                alignment: Alignment.topLeft, // Keep it aligned to the left
-                child: IconButton(
-                  icon: const Icon(Icons.menu, size: 32),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => Chat()),
-                    );
-                  },
-                ),
-              ),
-            ),
+            // color: Colors.white,
+            // child: Column(
+            //   children: [
+            //     const SizedBox(height: 40),
+            //     IconButton(
+            //       icon: const Icon(Icons.menu),
+            //       onPressed: () {
+            //         Navigator.pop(context); // Đóng LeftBar khi nhấn menu
+            //       },
+            //     ),
+            //   ],
+            // ),
           ),
 
           // Phần phải 80%
@@ -57,7 +52,7 @@ class RightBar extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: ListTile(
-                      leading: const Icon(Icons.local_pharmacy, size: 32),
+                      leading: const Icon(Icons.local_pharmacy, size: 28),
                       title: const Text(
                         'Nhà thuốc gần đây',
                         style: TextStyle(
@@ -75,12 +70,12 @@ class RightBar extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  //const SizedBox(height: 20),
                   const Divider(thickness: 1), // Gạch ngang
 
-                  const SizedBox(height: 20),
+                  //const SizedBox(height: 20),
                   ListTile(
-                    leading: const Icon(Icons.settings, size: 28),
+                    leading: const Icon(Icons.settings),
                     title:
                         const Text('Cài đặt', style: TextStyle(fontSize: 20)),
                     onTap: () {
@@ -91,21 +86,20 @@ class RightBar extends StatelessWidget {
                       );
                     },
                   ),
-                  const SizedBox(height: 20),
+                  //const SizedBox(height: 20),
                   ListTile(
-                    leading: const Icon(Icons.help_outline, size: 28),
+                    leading: const Icon(Icons.help_outline),
                     title: const Text('Hỗ trợ', style: TextStyle(fontSize: 20)),
                     onTap: () {
                       // Xử lý sự kiện hỗ trợ
                     },
                   ),
-                  const SizedBox(height: 20),
+                  //const SizedBox(height: 20),
                   // Nút Đăng xuất
                   ListTile(
-                    leading:
-                        const Icon(Icons.logout, size: 28, color: Colors.red),
+                    leading: const Icon(Icons.logout, color: Colors.black),
                     title: const Text('Đăng xuất',
-                        style: TextStyle(fontSize: 20, color: Colors.red)),
+                        style: TextStyle(fontSize: 20, color: Colors.black)),
                     onTap: () {
                       signOut(context);
                     },

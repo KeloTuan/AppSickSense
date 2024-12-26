@@ -10,13 +10,13 @@ class SettingPage extends StatelessWidget {
     return Scaffold(
         appBar: PreferredSize(
           preferredSize:
-              const Size.fromHeight(120.0), // Đặt chiều cao của AppBar
+              const Size.fromHeight(60.0), // Đặt chiều cao của AppBar
           child: AppBar(
             automaticallyImplyLeading: false, // Tắt mũi tên mặc định của AppBar
             flexibleSpace: Padding(
               padding: const EdgeInsets.only(
                   top:
-                      40.0), // Khoảng cách từ đầu trang đến nội dung trong AppBar
+                      30.0), // Khoảng cách từ đầu trang đến nội dung trong AppBar
               child: Row(
                 children: [
                   IconButton(
@@ -77,10 +77,10 @@ class SettingPage extends StatelessWidget {
                 style: TextStyle(fontSize: 16),
               ),
               onTap: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => ChangePasswordPage()),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChangePasswordPage()),
+                );
               },
             ),
             const Divider(),
