@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:sick_sense_mobile/auth/home_screen.dart';
+import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:sick_sense_mobile/setting/accountSettingPage.dart';
 
 class LeftBar extends StatelessWidget {
@@ -21,7 +21,6 @@ class LeftBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
                 Expanded(
                   child: ListView(
                     children: [
@@ -78,25 +77,20 @@ class LeftBar extends StatelessWidget {
             color: Colors.white,
             child: Column(
               children: [
-                const SizedBox(height: 45),
+                const SizedBox(height: 40),
                 IconButton(
                   icon: const Icon(Icons.menu),
-                  iconSize: 30.0,
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const HomeScreen()),
-                    );
+                    Navigator.pop(context); // Đóng LeftBar khi nhấn menu
                   },
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  iconSize: 30.0,
-                  onPressed: () {},
-                ),
-                const SizedBox(height: 20),
+                // const Spacer(),
+                // IconButton(
+                //   icon: const Icon(Icons.add),
+                //   iconSize: 30.0,
+                //   onPressed: () {},
+                // ),
+                // const SizedBox(height: 20),
               ],
             ),
           )
