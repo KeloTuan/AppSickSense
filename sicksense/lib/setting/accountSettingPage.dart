@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AccountSettingPage extends StatefulWidget {
   const AccountSettingPage({super.key});
@@ -74,6 +75,8 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   }
 
   Widget _buildEditableField(String label, String key) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -84,7 +87,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                   decoration: InputDecoration(labelText: label),
                 )
               : Text(
-                  '$label: ${userData[key] ?? 'No data available'}',
+                  '$label: ${userData[key] ?? localizations.no_data}',
                   style: const TextStyle(fontSize: 18),
                 ),
         ),
@@ -120,7 +123,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cập nhật thông tin thành công')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.update_success)),
         );
       }
     } catch (e) {
@@ -133,34 +136,36 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thông tin người dùng'),
+        title: Text(localizations.user_info),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            _buildEditableField('Họ và tên', 'Name'),
+            _buildEditableField(localizations.name, 'Name'),
             const Divider(),
-            _buildEditableField('Số điện thoại', 'Phone'),
+            _buildEditableField(localizations.phone, 'Phone'),
             const Divider(),
-            _buildEditableField('Email', 'Email'),
+            _buildEditableField(localizations.email, 'Email'),
             const Divider(),
-            _buildEditableField('Giới tính', 'Gender'),
+            _buildEditableField(localizations.gender, 'Gender'),
             const Divider(),
-            _buildEditableField('Chiều cao (cm)', 'Height'),
+            _buildEditableField(localizations.height, 'Height'),
             const Divider(),
-            _buildEditableField('Cân nặng (kg)', 'Weight'),
+            _buildEditableField(localizations.weight, 'Weight'),
             const Divider(),
-            _buildEditableField('Ngày sinh', 'DateOfBirth'),
+            _buildEditableField(localizations.dob, 'DateOfBirth'),
             const Divider(),
-            _buildEditableField('Bác sĩ', 'IsDoctor'),
+            _buildEditableField(localizations.is_doctor, 'IsDoctor'),
           ],
         ),
       ),
