@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/auth/login/login_screen.dart';
 import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:sick_sense_mobile/setting/setting.dart';
-//import 'package:sicksense/map/screens/pharmacy_search_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RightBar extends StatelessWidget {
   const RightBar({super.key});
@@ -21,10 +21,13 @@ class RightBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Lấy đối tượng AppLocalizations để sử dụng chuỗi ngôn ngữ
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Row(
         children: [
-          // Phần trái 20% (Nút menu)
+          // Phần trái 20% (Nút menu - nếu cần thiết)
           Container(
             width: MediaQuery.of(context).size.width * 0.2,
             // color: Colors.white,
@@ -53,14 +56,16 @@ class RightBar extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: ListTile(
                       leading: const Icon(Icons.local_pharmacy, size: 28),
-                      title: const Text(
-                        'Nhà thuốc gần đây',
-                        style: TextStyle(
+                      title: Text(
+                        localizations
+                            .nearbyPharmacies, // Sử dụng chuỗi ngôn ngữ
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       onTap: () {
+                        // Bạn có thể điều hướng tới trang tìm kiếm nhà thuốc
                         // Navigator.push(
                         //   context,
                         //   MaterialPageRoute(
@@ -70,14 +75,12 @@ class RightBar extends StatelessWidget {
                     ),
                   ),
 
-                  //const SizedBox(height: 20),
                   const Divider(thickness: 1), // Gạch ngang
 
-                  //const SizedBox(height: 20),
                   ListTile(
                     leading: const Icon(Icons.settings),
-                    title:
-                        const Text('Cài đặt', style: TextStyle(fontSize: 20)),
+                    title: Text(localizations.settings,
+                        style: const TextStyle(fontSize: 20)),
                     onTap: () {
                       // Xử lý sự kiện cài đặt
                       Navigator.push(
@@ -86,20 +89,24 @@ class RightBar extends StatelessWidget {
                       );
                     },
                   ),
-                  //const SizedBox(height: 20),
+
                   ListTile(
                     leading: const Icon(Icons.help_outline),
-                    title: const Text('Hỗ trợ', style: TextStyle(fontSize: 20)),
+                    title: Text(localizations.support,
+                        style: const TextStyle(fontSize: 20)),
                     onTap: () {
                       // Xử lý sự kiện hỗ trợ
+                      // Bạn có thể điều hướng tới một trang hỗ trợ
                     },
                   ),
-                  //const SizedBox(height: 20),
+
                   // Nút Đăng xuất
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.black),
-                    title: const Text('Đăng xuất',
-                        style: TextStyle(fontSize: 20, color: Colors.black)),
+                    title: Text(
+                      localizations.logout,
+                      style: const TextStyle(fontSize: 20, color: Colors.black),
+                    ),
                     onTap: () {
                       signOut(context);
                     },

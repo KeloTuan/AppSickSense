@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -37,13 +38,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         await user.updatePassword(newPassword);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đổi mật khẩu thành công!')),
+          SnackBar(
+              content:
+                  Text(AppLocalizations.of(context)!.passwordChangeSuccess)),
         );
 
         Navigator.pop(context); // Quay lại trang trước
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context)!.error}: $e')),
         );
       } finally {
         setState(() {
@@ -63,9 +66,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Lấy đối tượng AppLocalizations để sử dụng chuỗi ngôn ngữ
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đổi mật khẩu'),
+        title: Text(localizations.changePassword), // Dùng chuỗi ngôn ngữ
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -76,13 +82,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               // Mật khẩu hiện tại
               TextFormField(
                 controller: _currentPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu hiện tại',
+                decoration: InputDecoration(
+                  labelText:
+                      localizations.currentPassword, // Dùng chuỗi ngôn ngữ
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập mật khẩu hiện tại';
+                    return localizations
+                        .enterCurrentPassword; // Dùng chuỗi ngôn ngữ
                   }
                   return null;
                 },
@@ -92,16 +100,18 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               // Mật khẩu mới
               TextFormField(
                 controller: _newPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu mới',
+                decoration: InputDecoration(
+                  labelText: localizations.newPassword, // Dùng chuỗi ngôn ngữ
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập mật khẩu mới';
+                    return localizations
+                        .enterNewPassword; // Dùng chuỗi ngôn ngữ
                   }
                   if (value.length < 6) {
-                    return 'Mật khẩu phải có ít nhất 6 ký tự';
+                    return localizations
+                        .passwordMinLengthError; // Dùng chuỗi ngôn ngữ
                   }
                   return null;
                 },
@@ -111,13 +121,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               // Xác nhận mật khẩu
               TextFormField(
                 controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Xác nhận mật khẩu mới',
+                decoration: InputDecoration(
+                  labelText:
+                      localizations.confirmNewPassword, // Dùng chuỗi ngôn ngữ
                 ),
                 obscureText: true,
                 validator: (value) {
                   if (value != _newPasswordController.text) {
-                    return 'Mật khẩu không khớp';
+                    return localizations
+                        .passwordMismatchError; // Dùng chuỗi ngôn ngữ
                   }
                   return null;
                 },
@@ -129,7 +141,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _changePassword,
-                      child: const Text('Lưu mật khẩu'),
+                      child: Text(
+                          localizations.savePassword), // Dùng chuỗi ngôn ngữ
                     ),
             ],
           ),
@@ -138,90 +151,3 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 }
-
-
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:sicksense/pages/chat.dart';
-
-// class ChangePassword extends StatefulWidget {
-//   const ChangePassword({super.key});
-
-//   @override
-//   State<ChangePassword> createState() => _ChangePasswordState();
-// }
-
-// class _ChangePasswordState extends State<ChangePassword> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Padding(
-//         padding: const EdgeInsets.symmetric(horizontal: 20),
-//         child: Center(
-//           child: Column(
-//             mainAxisAlignment: MainAxisAlignment.start,
-//             crossAxisAlignment: CrossAxisAlignment.center,
-//             children: [
-//               const SizedBox(height: 50),
-//               const CircleAvatar(
-//                 backgroundImage: AssetImage('assets/Duck.png'),
-//                 radius: 30,
-//               ),
-//               const SizedBox(height: 20),
-//               TextFormField(
-//                 decoration: const InputDecoration(
-//                   label: Center(
-//                       child: Text(
-//                     'Nhập mật khẩu mới',
-//                     style: TextStyle(fontSize: 16),
-//                   )),
-//                   border: OutlineInputBorder(),
-//                   alignLabelWithHint:
-//                       true, // Center alignment for hint if multiline
-//                 ),
-//               ),
-//               const SizedBox(height: 20),
-//               TextFormField(
-//                 decoration: const InputDecoration(
-//                   label: Center(
-//                       child: Text(
-//                     'Nhập lại mật khẩu mới',
-//                     style: TextStyle(fontSize: 16),
-//                   )),
-//                   border: OutlineInputBorder(),
-//                   alignLabelWithHint: true,
-//                 ),
-//               ),
-//               const SizedBox(
-//                 height: 20,
-//               ),
-//               SizedBox(
-//                 height: 40,
-//                 width: double.infinity,
-//                 child: ElevatedButton(
-//                   onPressed: () {
-//                     Navigator.push(
-//                       context,
-//                       MaterialPageRoute(builder: (context) => Chat()),
-//                     );
-//                   },
-//                   style: ElevatedButton.styleFrom(
-//                       backgroundColor: Colors.deepPurple,
-//                       shape: const RoundedRectangleBorder(
-//                           borderRadius:
-//                               BorderRadius.all(Radius.circular(5.5)))),
-//                   child: const Text(
-//                     'Xác nhận',
-//                     style: TextStyle(color: Colors.white),
-//                   ),
-//                 ),
-//               )
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }

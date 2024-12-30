@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/nav_bar/leftBar.dart';
 import 'package:sick_sense_mobile/nav_bar/rightbar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import auto-generated localization
 
 class Chat extends StatefulWidget {
   const Chat({super.key});
@@ -26,28 +27,30 @@ class _ChatState extends State<Chat> {
   void _openLeftBar() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => LeftBar()),
+      MaterialPageRoute(builder: (context) => const LeftBar()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Use AppLocalizations to get translated text
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
-      backgroundColor:
-          Colors.white, // Thêm dòng này để thay đổi nền thành màu trắng
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Chat với AI'),
+        title: Text(localizations
+            .chatWithAI), // Get the localized string for 'Chat with AI'
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.menu), // Biểu tượng menu thay vì mũi tên
-          onPressed: _openLeftBar, // Mở LeftBar khi nhấn
+          icon: const Icon(Icons.menu),
+          onPressed: _openLeftBar,
         ),
         actions: [RightButton(context)],
         backgroundColor: Colors.white,
       ),
       body: GestureDetector(
         onPanUpdate: (details) {
-          // Check if the swipe is from left to right
           if (details.delta.dx > 10) {
             _openLeftBar();
           }
@@ -107,8 +110,8 @@ class _ChatState extends State<Chat> {
             Container(
               margin: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
-                color: Colors.black12, // Thay đổi màu nền theo ý bạn
-                borderRadius: BorderRadius.circular(32), // Bo góc nếu cần
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(32),
               ),
               padding: const EdgeInsets.all(0),
               child: Row(
@@ -119,21 +122,24 @@ class _ChatState extends State<Chat> {
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            title: const Text("Cảnh báo"),
-                            content:
-                                const Text("Bạn muốn tạo cuộc trò chuyện mới?"),
+                            title: Text(
+                                localizations.warning), // Translated 'Warning'
+                            content: Text(localizations
+                                .newConversationPrompt), // Translated 'Do you want to create a new conversation?'
                             actions: [
                               TextButton(
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
-                                child: const Text("Hủy"),
+                                child: Text(localizations
+                                    .cancel), // Translated 'Cancel'
                               ),
                               ElevatedButton(
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
-                                child: const Text("Đồng ý"),
+                                child: Text(localizations
+                                    .confirm), // Translated 'Confirm'
                               ),
                             ],
                           );
@@ -146,13 +152,12 @@ class _ChatState extends State<Chat> {
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        //filled: true,
-                        //fillColor: const Color.fromARGB(255, 206, 228, 245),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(50),
                           borderSide: BorderSide.none,
                         ),
-                        hintText: 'Nhập tin nhắn',
+                        hintText: localizations
+                            .enterMessage, // Translated 'Enter your message'
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 16,
@@ -172,7 +177,6 @@ class _ChatState extends State<Chat> {
                 ],
               ),
             ),
-            //SizedBox(height: 10)
           ],
         ),
       ),
@@ -185,7 +189,7 @@ Widget RightButton(BuildContext context) {
     onPressed: () {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => RightBar()),
+        MaterialPageRoute(builder: (context) => const RightBar()),
       );
     },
     icon: const Icon(Icons.more_vert),
