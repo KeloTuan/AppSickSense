@@ -1,5 +1,5 @@
 {
-    "chatWithAI": "Chat với AI",
+    "chatWithAI": "Trò chuyện với AI",
     "warning": "Cảnh báo",
     "newConversationPrompt": "Bạn muốn tạo cuộc trò chuyện mới?",
     "cancel": "Hủy",
@@ -53,5 +53,8 @@
     "birthDate": "Ngày sinh",
     "isDoctor": "Bạn có phải là bác sĩ?",
     "signUpSuccess": "Đăng kí thành công. Bạn cần xác nhận Email để hoàn tất đăng kí",
-    "selectDate": "Chọn ngày sinh"
+    "selectDate": "Chọn ngày sinh",
+    "chatWithDoctor": "Trò chuyện cùng bác sĩ",
+    "noDoctorsAvailable": "Không có bác sĩ nào hiện tại",
+    "userInfoNotAvailable": "Thông tin người dùng không có"
 }

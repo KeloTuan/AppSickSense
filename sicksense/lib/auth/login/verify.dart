@@ -20,9 +20,9 @@ class _VerifyState extends State<Verify> {
   sendverifylink() async {
     final user = FirebaseAuth.instance.currentUser!;
     await user.sendEmailVerification().then((value) => {
-          Get.snackbar('Link sent', 'A link has been send to your email',
-              margin: EdgeInsets.all(30), snackPosition: SnackPosition.BOTTOM)
-        });
+      Get.snackbar('Link sent', 'A link has been send to your email',
+          margin: EdgeInsets.all(30), snackPosition: SnackPosition.BOTTOM)
+    });
   }
 
   reload() async {
@@ -31,7 +31,7 @@ class _VerifyState extends State<Verify> {
           .reload(); // Tải lại thông tin người dùng
       if (FirebaseAuth.instance.currentUser!.emailVerified) {
         // Nếu email đã được xác minh, điều hướng về màn hình Chat
-        Get.offAll(Chat());
+        Get.offAll(Chat);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
