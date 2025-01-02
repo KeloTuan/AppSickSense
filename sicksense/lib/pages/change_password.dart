@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sick_sense_mobile/setting/setting.dart';
 
 class ChangePassword extends StatefulWidget {
   @override
@@ -89,7 +90,10 @@ class _ChangePasswordPageState extends State<ChangePassword> {
         title: Text('Đổi mật khẩu'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SettingPage()),
+          ), // Navigate to SettingPage
         ),
       ),
       body: SingleChildScrollView(

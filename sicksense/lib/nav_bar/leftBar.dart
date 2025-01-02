@@ -2,34 +2,111 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sick_sense_mobile/pages/chat.dart';
-import 'package:sick_sense_mobile/setting/accountSettingPage.dart';
 
 class LeftBar extends StatelessWidget {
   const LeftBar({super.key});
 
-  Future<QuerySnapshot> _getDoctorsList() async {
+  // Kiểm tra người dùng hiện tại có phải bác sĩ
+  Future<bool> _isCurrentUserDoctor() async {
     final firestore = FirebaseFirestore.instance;
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    // Truy vấn danh sách người dùng có chức năng là bác sĩ
-    return await firestore
-        .collection('User') // Chú ý đúng tên collection 'User'
-        .where('IsDoctor', isEqualTo: true) // Lọc những người là bác sĩ
-        .get();
+    if (currentUser != null) {
+      final userDoc =
+          await firestore.collection('User').doc(currentUser.uid).get();
+      if (userDoc.exists) {
+        return userDoc.data()?['IsDoctor'] ?? false;
+      }
+    }
+    return false;
   }
 
+  // Lấy danh sách phù hợp dựa trên vai trò người dùng
+  Future<QuerySnapshot> _getDoctorsList() async {
+    final firestore = FirebaseFirestore.instance;
+    final isDoctor = await _isCurrentUserDoctor();
+
+    if (isDoctor) {
+      return await firestore
+          .collection('User')
+          .where('IsDoctor', isEqualTo: false)
+          .get();
+    } else {
+      return await firestore
+          .collection('User')
+          .where('IsDoctor', isEqualTo: true)
+          .get();
+    }
+  }
+
+  // Lấy tên người dùng hiện tại
   Future<String> _getCurrentUserName() async {
     final firestore = FirebaseFirestore.instance;
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser != null) {
       final userDoc =
-      await firestore.collection('User').doc(currentUser.uid).get();
+          await firestore.collection('User').doc(currentUser.uid).get();
       if (userDoc.exists) {
-        return userDoc.data()?['Name'] ??
-            'Unknown User'; // Lấy tên hoặc hiển thị mặc định
+        return userDoc.data()?['Name'] ?? 'Unknown User';
       }
     }
     return 'Unknown User';
+  }
+
+  // Tạo ExpansionTile
+  Widget _buildExpandableTile(
+      String title, double fontSize, Future<QuerySnapshot> futureList) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20.0),
+      child: ExpansionTile(
+        leading: const Icon(Icons.add),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
+        ),
+        tilePadding: EdgeInsets.zero,
+        backgroundColor: Colors.transparent,
+        shape: Border.all(color: Colors.transparent),
+        children: [
+          FutureBuilder<QuerySnapshot>(
+            future: futureList,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('No users available.'),
+                );
+              }
+
+              return ListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: snapshot.data!.docs.map((doc) {
+                  var userData = doc.data() as Map<String, dynamic>;
+                  return ListTile(
+                    title: Text(userData['Name']),
+                    subtitle: Text(userData['Email']),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Chat(friendId: doc.id),
+                        ),
+                      );
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -44,44 +121,16 @@ class LeftBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Danh sách bác sĩ
                 Expanded(
-                  child: FutureBuilder<QuerySnapshot>(
-                    future: _getDoctorsList(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Center(
-                            child: Text('No doctors available.'));
-                      }
-
-                      return ListView(
-                        shrinkWrap: true,
-                        children: snapshot.data!.docs.map((doc) {
-                          var doctorData = doc.data() as Map<String, dynamic>;
-                          return ListTile(
-                            title: Text(doctorData['Name']),
-                            subtitle: Text(doctorData['Email']),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Chat(friendId: doc.id),
-                                ),
-                              );
-                            },
-                          );
-                        }).toList(),
-                      );
-                    },
+                  child: ListView(
+                    children: [
+                      //_buildExpandableTile('Trò chuyện cùng AI', 20.0, Future.value(QuerySnapshot.empty())),
+                      const SizedBox(height: 16),
+                      _buildExpandableTile(
+                          'Trò chuyện cùng bác sĩ', 20.0, _getDoctorsList()),
+                    ],
                   ),
                 ),
-
-                const Divider(height: 10, color: Colors.black),
-                // Hiển thị tên người dùng ở đây
                 FutureBuilder<String>(
                   future: _getCurrentUserName(),
                   builder: (context, snapshot) {
@@ -104,7 +153,7 @@ class LeftBar extends StatelessWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 20)
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -128,16 +177,5 @@ class LeftBar extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<QuerySnapshot> _getFriendsList() async {
-    final firestore = FirebaseFirestore.instance;
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    return await firestore
-        .collection('users')
-        .doc(currentUser?.uid)
-        .collection('friends') // Assuming you have a collection 'friends'
-        .get();
   }
 }
