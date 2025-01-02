@@ -7,10 +7,33 @@ import 'package:sick_sense_mobile/setting/accountSettingPage.dart';
 class LeftBar extends StatelessWidget {
   const LeftBar({super.key});
 
+  Future<QuerySnapshot> _getDoctorsList() async {
+    final firestore = FirebaseFirestore.instance;
+
+    // Truy vấn danh sách người dùng có chức năng là bác sĩ
+    return await firestore
+        .collection('User') // Chú ý đúng tên collection 'User'
+        .where('IsDoctor', isEqualTo: true) // Lọc những người là bác sĩ
+        .get();
+  }
+
+  Future<String> _getCurrentUserName() async {
+    final firestore = FirebaseFirestore.instance;
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      final userDoc =
+      await firestore.collection('User').doc(currentUser.uid).get();
+      if (userDoc.exists) {
+        return userDoc.data()?['Name'] ??
+            'Unknown User'; // Lấy tên hoặc hiển thị mặc định
+      }
+    }
+    return 'Unknown User';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       body: Row(
         children: [
@@ -21,52 +44,67 @@ class LeftBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Danh sách bác sĩ
                 Expanded(
-                  child: ListView(
-                    children: [
-                      _buildExpandableTile('Trò chuyện cùng AI', 20.0),
-                      const SizedBox(height: 16),
-                      _buildExpandableTile('Trò chuyện cùng bác sĩ', 20.0),
-                    ],
+                  child: FutureBuilder<QuerySnapshot>(
+                    future: _getDoctorsList(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                            child: Text('No doctors available.'));
+                      }
+
+                      return ListView(
+                        shrinkWrap: true,
+                        children: snapshot.data!.docs.map((doc) {
+                          var doctorData = doc.data() as Map<String, dynamic>;
+                          return ListTile(
+                            title: Text(doctorData['Name']),
+                            subtitle: Text(doctorData['Email']),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Chat(friendId: doc.id),
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
                 ),
-                FutureBuilder<DocumentSnapshot>(
-                  future: _getUserData(currentUser),
+
+                const Divider(height: 10, color: Colors.black),
+                // Hiển thị tên người dùng ở đây
+                FutureBuilder<String>(
+                  future: _getCurrentUserName(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(),
+                      );
                     }
 
-                    if (!snapshot.hasData) {
-                      return const Center(
-                          child: Text('Thông tin người dùng không có'));
-                    }
-
-                    final userData =
-                        snapshot.data!.data() as Map<String, dynamic>;
-                    final String userEmail =
-                        userData['Name'] ?? "Tên chưa được cập nhật";
-
-                    return ListTile(
-                      leading: const CircleAvatar(
-                        backgroundImage: AssetImage('assets/profile.jpg'),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        snapshot.data ?? 'Unknown User',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      title: Text(
-                        userEmail,
-                        style: const TextStyle(fontSize: 20.0),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AccountSettingPage(),
-                          ),
-                        );
-                      },
                     );
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 20)
               ],
             ),
           ),
@@ -81,114 +119,25 @@ class LeftBar extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.menu),
                   onPressed: () {
-                    Navigator.pop(context); // Đóng LeftBar khi nhấn menu
+                    Navigator.pop(context);
                   },
                 ),
-                // const Spacer(),
-                // IconButton(
-                //   icon: const Icon(Icons.add),
-                //   iconSize: 30.0,
-                //   onPressed: () {},
-                // ),
-                // const SizedBox(height: 20),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Future<DocumentSnapshot> _getUserData(User? currentUser) async {
+  Future<QuerySnapshot> _getFriendsList() async {
     final firestore = FirebaseFirestore.instance;
+    final currentUser = FirebaseAuth.instance.currentUser;
+
     return await firestore
-        .collection('User')
-        .doc(currentUser
-            ?.uid) // Query using UID instead of email for better precision
+        .collection('users')
+        .doc(currentUser?.uid)
+        .collection('friends') // Assuming you have a collection 'friends'
         .get();
-  }
-
-  Widget _buildExpandableTile(String title, double fontSize) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20.0),
-      child: ExpansionTile(
-        leading: const Icon(Icons.add),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: fontSize),
-        ),
-        tilePadding: EdgeInsets.zero,
-        backgroundColor: Colors.transparent,
-        shape: Border.all(color: Colors.transparent),
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18.0),
-            child: Container(
-              constraints: const BoxConstraints(
-                maxHeight: 300.0,
-              ),
-              child: SingleChildScrollView(
-                child: _buildConversationHistory(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConversationHistory() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        _buildConversationGroup('Hôm nay', [
-          'Thiết kế ERD hệ thống',
-          'Sửa lỗi emulator Android',
-        ]),
-        const SizedBox(height: 20),
-        _buildConversationGroup('Hôm qua', [
-          'Thiết kế ERD hệ thống',
-          'Sửa lỗi emulator Android',
-        ]),
-        const SizedBox(height: 20),
-        _buildConversationGroup('7 ngày trước', [
-          'Thiết kế ERD hệ thống',
-          'Sửa lỗi emulator Android',
-          'Thêm dữ liệu cho hệ thống',
-          'Kiểm tra giao diện',
-          'Viết tài liệu hướng dẫn',
-        ]),
-      ],
-    );
-  }
-
-  Widget _buildConversationGroup(String date, List<String> conversations) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            date,
-            style: const TextStyle(
-              fontSize: 20.0,
-              color: Colors.blue,
-            ),
-          ),
-        ),
-        const SizedBox(height: 20.0),
-        ...conversations.map(
-          (conversation) => Container(
-            alignment: Alignment.centerLeft,
-            margin: const EdgeInsets.only(bottom: 24.0),
-            child: Text(
-              conversation,
-              style: const TextStyle(fontSize: 20.0, color: Colors.black),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }

@@ -18,7 +18,7 @@ class HomeScreen extends StatelessWidget {
           return const Center(child: Text('Chưa đăng nhập'));
         }
 
-        return Chat();
+        return Chat(friendId: 'someFriendId');
       },
     );
   }
