@@ -53,5 +53,6 @@
     "birthDate": "Birth Date",
     "isDoctor": "Are you a doctor?",
     "signUpSuccess": "Sign up successful. Please verify your email to complete the registration.",
-    "selectDate": "Select Date"
+    "selectDate": "Select Date",
+    "save": "Save"
 }
