@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/auth/login/login_screen.dart';
 import 'package:sick_sense_mobile/auth/login/wrapper.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -52,7 +53,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
               'Đăng kí thành công. Bạn cần xác nhận Email để hoàn tất đăng kí'),
           duration: Duration(seconds: 8),
@@ -99,9 +100,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
 
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign Up'),
+        title: Text(localizations.signUp),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -110,27 +113,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
             // Full name field
             TextField(
               controller: _nameController,
-              decoration: inputDecoration.copyWith(labelText: 'Họ và tên'),
+              decoration:
+                  inputDecoration.copyWith(labelText: localizations.fullName),
             ),
             const SizedBox(height: 20),
             // Email field
             TextField(
               controller: _emailController,
-              decoration: inputDecoration.copyWith(labelText: 'Email'),
+              decoration:
+                  inputDecoration.copyWith(labelText: localizations.email),
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 20),
             // Password field
             TextField(
               controller: _passwordController,
-              decoration: inputDecoration.copyWith(labelText: 'Mật khẩu'),
+              decoration:
+                  inputDecoration.copyWith(labelText: localizations.password),
               obscureText: true,
             ),
             const SizedBox(height: 20),
             // Phone number field
             TextField(
               controller: _phoneController,
-              decoration: inputDecoration.copyWith(labelText: 'Số điện thoại'),
+              decoration:
+                  inputDecoration.copyWith(labelText: localizations.phone),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 20),
@@ -138,9 +145,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                const Text(
-                  'Giới tính:',
-                  style: TextStyle(fontSize: 16, color: Colors.purple),
+                Text(
+                  localizations.gender,
+                  style: const TextStyle(fontSize: 16, color: Colors.purple),
                 ),
                 const SizedBox(width: 20),
                 Row(
@@ -154,7 +161,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         });
                       },
                     ),
-                    const Text('Nam'),
+                    Text(localizations.male),
                   ],
                 ),
                 const SizedBox(width: 20),
@@ -169,7 +176,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         });
                       },
                     ),
-                    const Text('Nữ'),
+                    Text(localizations.female),
                   ],
                 ),
               ],
@@ -178,9 +185,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
             // Date of birth selection
             Row(
               children: [
-                const Text(
-                  'Ngày sinh:',
-                  style: TextStyle(fontSize: 16, color: Colors.purple),
+                Text(
+                  localizations.birthDate,
+                  style: const TextStyle(fontSize: 16, color: Colors.purple),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -195,7 +202,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       child: Text(
                         _selectedDate == null
-                            ? 'Chọn ngày sinh'
+                            ? localizations.selectDate
                             : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                         style: const TextStyle(fontSize: 16),
                       ),
@@ -208,23 +215,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
             // Height field
             TextField(
               controller: _heightController,
-              decoration: inputDecoration.copyWith(labelText: 'Chiều cao (cm)'),
+              decoration:
+                  inputDecoration.copyWith(labelText: localizations.height),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 20),
             // Weight field
             TextField(
               controller: _weightController,
-              decoration: inputDecoration.copyWith(labelText: 'Cân nặng (kg)'),
+              decoration:
+                  inputDecoration.copyWith(labelText: localizations.weight),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 20),
             // Doctor switch
             Row(
               children: [
-                const Text(
-                  'Bạn có phải là bác sĩ?',
-                  style: TextStyle(fontSize: 16, color: Colors.purple),
+                Text(
+                  localizations.isDoctor,
+                  style: const TextStyle(fontSize: 16, color: Colors.purple),
                 ),
                 Switch(
                   value: _isDoctor,
@@ -237,10 +246,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            // Sign up button
+            // Sign Up button
             ElevatedButton(
               onPressed: _signUp,
-              child: const Text('Sign Up'),
+              child: Text(localizations.signUp),
             ),
           ],
         ),

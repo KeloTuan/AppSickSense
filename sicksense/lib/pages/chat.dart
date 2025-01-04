@@ -1,193 +1,162 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/nav_bar/leftBar.dart';
 import 'package:sick_sense_mobile/nav_bar/rightbar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sick_sense_mobile/pages/chat_service.dart';
 
 class Chat extends StatefulWidget {
-  const Chat({super.key});
+  final String friendId; // ID của bạn bè để tạo cuộc trò chuyện
+
+  const Chat({super.key, required this.friendId});
 
   @override
   State<Chat> createState() => _ChatState();
 }
 
 class _ChatState extends State<Chat> {
-  final List<Map<String, String>> messages = [];
   final TextEditingController _controller = TextEditingController();
+  late String conversationId;
+  late ChatService chatService;
 
-  void _sendMessage(String message) {
-    setState(() {
-      messages.add({
-        'sender': 'user',
-        'message': message,
-      });
-    });
-    _controller.clear();
+  @override
+  void initState() {
+    super.initState();
+    chatService = ChatService();
+    conversationId = chatService.generateConversationId(widget.friendId);
   }
 
-  void _openLeftBar() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => LeftBar()),
-    );
+  void _sendMessage(String message) async {
+    if (message.isNotEmpty) {
+      await chatService.sendMessage(conversationId, message, widget.friendId);
+      _controller.clear();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          Colors.white, // Thêm dòng này để thay đổi nền thành màu trắng
       appBar: AppBar(
-        title: const Text('Chat với AI'),
-        centerTitle: true,
+        title: const Text('Chat'),
         leading: IconButton(
-          icon: const Icon(Icons.menu), // Biểu tượng menu thay vì mũi tên
-          onPressed: _openLeftBar, // Mở LeftBar khi nhấn
+          icon: const Icon(Icons.menu), // Menu icon
+          onPressed: () {
+            // Show the LeftBar when the menu icon is pressed
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const LeftBar()), // Navigate to LeftBar
+            );
+          },
         ),
-        actions: [RightButton(context)],
-        backgroundColor: Colors.white,
+        actions: [
+          // Icon on the right side of the AppBar (more_vert)
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {
+              // Show the RightBar when the more_vert icon is pressed
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const RightBar()), // Navigate to RightBar
+              );
+            },
+          ),
+        ],
       ),
-      body: GestureDetector(
-        onPanUpdate: (details) {
-          // Check if the swipe is from left to right
-          if (details.delta.dx > 10) {
-            _openLeftBar();
-          }
-        },
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  bool isSender = messages[index]['sender'] == 'user';
-                  return Row(
-                    mainAxisAlignment: isSender
-                        ? MainAxisAlignment.end
-                        : MainAxisAlignment.start,
-                    children: [
-                      if (!isSender)
-                        Container(
-                          margin: const EdgeInsets.only(right: 10),
-                          child: const CircleAvatar(
-                            backgroundImage: AssetImage('assets/Duck.png'),
-                            radius: 20,
+      body: Column(
+        children: [
+          // Hiển thị tin nhắn từ Firestore
+          Expanded(
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: chatService.getMessages(conversationId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.data == null || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No messages yet.'));
+                }
+
+                final messages = snapshot.data!;
+
+                return ListView.builder(
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    var message = messages[index];
+                    bool isSender = message['sender'] ==
+                        FirebaseAuth.instance.currentUser!.uid;
+                    return Row(
+                      mainAxisAlignment: isSender
+                          ? MainAxisAlignment.end
+                          : MainAxisAlignment.start,
+                      children: [
+                        if (!isSender)
+                          const CircleAvatar(
+                            backgroundImage: AssetImage('assets/profile.jpg'),
                           ),
-                        ),
-                      Flexible(
-                        child: Container(
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 10),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: isSender ? Colors.blue : Colors.grey,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          padding: const EdgeInsets.all(8.0),
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 5.0, horizontal: 10.0),
-                          child: Text(
-                            messages[index]['message']!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16.0,
-                            ),
-                          ),
+                          child: Text(message['message'],
+                              style: const TextStyle(color: Colors.white)),
                         ),
-                      ),
-                      if (isSender)
-                        Container(
-                          margin: const EdgeInsets.only(left: 10),
-                          child: const CircleAvatar(
-                            backgroundImage: AssetImage('assets/Duck.png'),
-                            radius: 20,
+                        if (isSender)
+                          const CircleAvatar(
+                            backgroundImage: AssetImage('assets/profile.jpg'),
                           ),
-                        ),
-                    ],
-                  );
-                },
-              ),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
-            Container(
-              margin: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Colors.black12, // Thay đổi màu nền theo ý bạn
-                borderRadius: BorderRadius.circular(32), // Bo góc nếu cần
-              ),
-              padding: const EdgeInsets.all(0),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text("Cảnh báo"),
-                            content:
-                                const Text("Bạn muốn tạo cuộc trò chuyện mới?"),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text("Hủy"),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: const Text("Đồng ý"),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    icon: const Icon(Icons.add),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        //filled: true,
-                        //fillColor: const Color.fromARGB(255, 206, 228, 245),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(50),
-                          borderSide: BorderSide.none,
-                        ),
-                        hintText: 'Nhập tin nhắn',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 16,
-                        ),
+          ),
+
+          // Modified message input section
+          Container(
+            margin: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: 'Enter your message...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(50),
+                        borderSide: BorderSide.none,
                       ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 16),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    onPressed: () {
-                      if (_controller.text.isNotEmpty) {
-                        _sendMessage(_controller.text);
-                      }
-                    },
-                    icon: const Icon(Icons.arrow_circle_up),
-                  ),
-                ],
-              ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    if (_controller.text.isNotEmpty) {
+                      _sendMessage(_controller.text);
+                    }
+                  },
+                  icon: const Icon(Icons.arrow_circle_up), // Custom send icon
+                ),
+              ],
             ),
-            //SizedBox(height: 10)
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
-
-Widget RightButton(BuildContext context) {
-  return IconButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => RightBar()),
-      );
-    },
-    icon: const Icon(Icons.more_vert),
-  );
 }

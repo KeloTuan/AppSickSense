@@ -1,140 +1,275 @@
 import 'package:flutter/material.dart';
+import 'package:sick_sense_mobile/main.dart';
 import 'package:sick_sense_mobile/pages/change_password.dart';
+import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:sick_sense_mobile/setting/accountSettingPage.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingPage extends StatelessWidget {
   const SettingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     return Scaffold(
-        appBar: PreferredSize(
-          preferredSize:
-              const Size.fromHeight(60.0), // Đặt chiều cao của AppBar
-          child: AppBar(
-            automaticallyImplyLeading: false, // Tắt mũi tên mặc định của AppBar
-            flexibleSpace: Padding(
-              padding: const EdgeInsets.only(
-                  top:
-                      30.0), // Khoảng cách từ đầu trang đến nội dung trong AppBar
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back,
-                        color: Colors.black), // Mũi tên trở về
-                    onPressed: () {
-                      Navigator.pop(context); // Quay lại trang trước
-                    },
+      backgroundColor: theme.colorScheme.background,
+      appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            // decoration: BoxDecoration(
+            //   shape: BoxShape.circle,
+            //   color: theme.colorScheme.primary.withOpacity(0.1),
+            // ),
+            child: Icon(
+              Icons.arrow_back,
+              color: Colors.black,
+              size: 20,
+            ),
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Chat(friendId: '')),
+            );
+          },
+        ),
+        title: Text(
+          localizations.settings,
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        children: [
+          _buildSettingItem(
+            context: context,
+            icon: Icons.account_circle,
+            title: localizations.account,
+            subtitle: localizations.accountDescription,
+            iconBackgroundColor: Colors.blue,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const AccountSettingPage()),
+              );
+            },
+          ),
+          _buildSettingItem(
+            context: context,
+            icon: Icons.password,
+            title: localizations.password,
+            subtitle: localizations.changePassword,
+            iconBackgroundColor: Colors.green,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ChangePassword()),
+              );
+            },
+          ),
+          _buildSettingItem(
+            context: context,
+            icon: Icons.language,
+            title: localizations.language,
+            subtitle: localizations.changeLanguage,
+            iconBackgroundColor: Colors.orange,
+            onTap: () => _showLanguageDialog(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingCategory({
+    required String title,
+    required IconData icon,
+    required ThemeData theme,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: theme.colorScheme.primary,
+          size: 20,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color iconBackgroundColor,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: iconBackgroundColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const Expanded(
-                    child: Align(
-                      alignment:
-                          Alignment.centerLeft, // Canh trái chữ "Cài đặt"
-                      child: Text(
-                        'Cài đặt',
-                        style: TextStyle(fontSize: 22), // Kích thước chữ
+                  child: Icon(
+                    icon,
+                    color: iconBackgroundColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  size: 16,
+                ),
+              ],
             ),
           ),
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(0.0),
-          children: [
-            //Tài khoản
-            ListTile(
-              leading: const Icon(Icons.account_circle, color: Colors.black),
-              title: const Text(
-                'Tài khoản',
-                style: TextStyle(fontSize: 20), // Kích thước chữ tiêu đề
-              ),
-              subtitle: const Text(
-                'Quản lý tài khoản của bạn',
-                style: TextStyle(fontSize: 16), // Kích thước chữ phụ đề
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const AccountSettingPage()),
-                );
-              },
-            ),
-            const Divider(),
+      ),
+    );
+  }
 
-            //Thông báo
-            ListTile(
-              leading: const Icon(Icons.password, color: Colors.black),
-              title: const Text(
-                'Mật khẩu',
-                style: TextStyle(fontSize: 20),
-              ),
-              subtitle: const Text(
-                'Đổi mật khẩu',
-                style: TextStyle(fontSize: 16),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ChangePasswordPage()),
-                );
-              },
-            ),
-            const Divider(),
+  void _showLanguageDialog(BuildContext context) {
+    final theme = Theme.of(context);
 
-            //Quyền riêng tư
-            ListTile(
-              leading: const Icon(Icons.privacy_tip, color: Colors.black),
-              title: const Text(
-                'Quyền riêng tư',
-                style: TextStyle(fontSize: 20),
-              ),
-              subtitle: const Text(
-                'Cài đặt quyền riêng tư',
-                style: TextStyle(fontSize: 16),
-              ),
-              onTap: () {
-                // Xử lý khi người dùng nhấn vào
-              },
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            AppLocalizations.of(context)!.changeLanguage,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
-            const Divider(),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildLanguageOption(
+                context: context,
+                title: 'Tiếng Việt',
+                locale: const Locale('vi'),
+                icon: Icons.language,
+              ),
+              const SizedBox(height: 8),
+              _buildLanguageOption(
+                context: context,
+                title: 'English',
+                locale: const Locale('en'),
+                icon: Icons.language,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-            //Ngôn ngữ
-            ListTile(
-              leading: const Icon(Icons.language, color: Colors.black),
-              title: const Text(
-                'Ngôn ngữ',
-                style: TextStyle(fontSize: 20),
-              ),
-              subtitle: const Text(
-                'Thay đổi ngôn ngữ ứng dụng',
-                style: TextStyle(fontSize: 16),
-              ),
-              onTap: () {
-                // Xử lý khi người dùng nhấn vào
-              },
-            ),
-            const Divider(),
+  Widget _buildLanguageOption({
+    required BuildContext context,
+    required String title,
+    required Locale locale,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
 
-            // Hỗ trợ
-            ListTile(
-              leading: const Icon(Icons.help, color: Colors.black),
-              title: const Text(
-                'Hỗ trợ',
-                style: TextStyle(fontSize: 20),
-              ),
-              subtitle: const Text(
-                'Liên hệ hoặc tìm câu trả lời',
-                style: TextStyle(fontSize: 16),
-              ),
-              onTap: () {
-                // Xử lý khi người dùng nhấn vào
-              },
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _changeLanguage(context, locale),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.2),
             ),
-          ],
-        ));
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: theme.textTheme.bodyLarge,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _changeLanguage(BuildContext context, Locale locale) {
+    Navigator.of(context).pop();
+    MyApp.of(context).setLocale(locale);
   }
 }
