@@ -4,6 +4,7 @@ import 'package:sick_sense_mobile/pages/change_password.dart';
 import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:sick_sense_mobile/setting/accountSettingPage.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sick_sense_mobile/summarize/summarize_websocket_screen.dart';
 
 class SettingPage extends StatelessWidget {
   const SettingPage({super.key});
@@ -21,11 +22,7 @@ class SettingPage extends StatelessWidget {
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
-            // decoration: BoxDecoration(
-            //   shape: BoxShape.circle,
-            //   color: theme.colorScheme.primary.withOpacity(0.1),
-            // ),
-            child: Icon(
+            child: const Icon(
               Icons.arrow_back,
               color: Colors.black,
               size: 20,
@@ -80,11 +77,29 @@ class SettingPage extends StatelessWidget {
             iconBackgroundColor: Colors.orange,
             onTap: () => _showLanguageDialog(context),
           ),
+          _buildSettingItem(
+            context: context,
+            icon: Icons.summarize,
+            title: "Tóm tắt", // You might want to add this to localizations
+            subtitle:
+            "Xem tóm tắt hồ sơ bệnh án", // You might want to add this to localizations
+            iconBackgroundColor: Colors.purple,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SummarizeWebsocketScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
+  // Rest of the code remains the same...
+  // (All other methods remain unchanged)
   Widget _buildSettingCategory({
     required String title,
     required IconData icon,

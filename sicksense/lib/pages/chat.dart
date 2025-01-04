@@ -38,7 +38,7 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat'),
+        title: const Text('Nhắn tin bác sĩ'),
         leading: IconButton(
           icon: const Icon(Icons.menu), // Menu icon
           onPressed: () {

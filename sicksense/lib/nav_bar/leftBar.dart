@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sick_sense_mobile/pages/chat.dart';
+import 'package:sick_sense_mobile/ask_disease/websocket_screen.dart';
 
 class LeftBar extends StatelessWidget {
   const LeftBar({super.key});
@@ -55,18 +56,6 @@ class LeftBar extends StatelessWidget {
     var userData = doc.data() as Map<String, dynamic>;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      // decoration: BoxDecoration(
-      //   color: Colors.white,
-      //   borderRadius: BorderRadius.circular(12),
-      //   boxShadow: [
-      //     BoxShadow(
-      //       color: Colors.grey.withOpacity(0.1),
-      //       spreadRadius: 1,
-      //       blurRadius: 3,
-      //       offset: const Offset(0, 1),
-      //     ),
-      //   ],
-      // ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
@@ -86,13 +75,6 @@ class LeftBar extends StatelessWidget {
             fontSize: 16,
           ),
         ),
-        // subtitle: Text(
-        //   userData['Email'],
-        //   style: TextStyle(
-        //     color: Colors.grey.shade600,
-        //     fontSize: 14,
-        //   ),
-        // ),
         onTap: () {
           Navigator.push(
             context,
@@ -114,10 +96,6 @@ class LeftBar extends StatelessWidget {
       child: ExpansionTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
-          // decoration: BoxDecoration(
-          //   color: Colors.blue.shade50,
-          //   borderRadius: BorderRadius.circular(8),
-          // ),
           child: const Icon(Icons.people_alt_outlined, color: Colors.black),
         ),
         title: Text(
@@ -178,20 +156,52 @@ class LeftBar extends StatelessWidget {
     );
   }
 
+  Widget _buildWebSocketTile(
+      BuildContext context, String title, double fontSize) {
+    return Theme(
+      data: ThemeData(
+        dividerColor: Colors.transparent,
+      ),
+      child: ExpansionTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          child: const Icon(Icons.wifi, color: Colors.black),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: fontSize,
+            color: Colors.black,
+          ),
+        ),
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            leading: const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.blue,
+            ),
+            title: const Text(
+              'Đi đến cuộc trò chuyện với AI',
+              style: TextStyle(fontSize: 16),
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => WebSocketScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        // decoration: BoxDecoration(
-        //   gradient: LinearGradient(
-        //     begin: Alignment.topLeft,
-        //     end: Alignment.bottomRight,
-        //     colors: [
-        //       Colors.blue.shade50,
-        //       Colors.white,
-        //     ],
-        //   ),
-        // ),
         child: Row(
           children: [
             // Left Section (80%)
@@ -201,9 +211,12 @@ class LeftBar extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Dòng chữ "Kiểm thử WebSocket" với khoảng cách phía trên
                   Expanded(
                     child: ListView(
                       children: [
+                        _buildWebSocketTile(
+                            context, 'Trò chuyện cùng AI', 20.0),
                         _buildExpandableTile(
                           'Trò chuyện cùng bác sĩ',
                           20.0,
@@ -212,6 +225,7 @@ class LeftBar extends StatelessWidget {
                       ],
                     ),
                   ),
+
                   Container(
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.only(
