@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/auth/login/login_screen.dart';
 import 'package:sick_sense_mobile/pages/chat.dart';
+import 'package:sick_sense_mobile/setting/accountSettingPage.dart';
 import 'package:sick_sense_mobile/setting/setting.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -13,9 +15,23 @@ class RightBar extends StatelessWidget {
     if (FirebaseAuth.instance.currentUser == null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     }
+  }
+
+  Future<String> _getCurrentUserName() async {
+    final firestore = FirebaseFirestore.instance;
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      final userDoc =
+          await firestore.collection('User').doc(currentUser.uid).get();
+      if (userDoc.exists) {
+        return userDoc.data()?['Name'] ?? 'Unknown User';
+      }
+    }
+    return 'Unknown User';
   }
 
   @override
@@ -53,26 +69,55 @@ class RightBar extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor:
-                              theme.colorScheme.primary.withOpacity(0.1),
-                          child: Text(
-                            user?.email?.substring(0, 1).toUpperCase() ?? 'U',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
+                        InkWell(
+                          onTap: () {
+                            // Navigate to the AccountSettingPage when the user taps on the profile section
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const AccountSettingPage()),
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundColor:
+                                    theme.colorScheme.primary.withOpacity(0.1),
+                                child: Text(
+                                  user?.email?.substring(0, 1).toUpperCase() ??
+                                      'U',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: FutureBuilder<String>(
+                                  future: _getCurrentUserName(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const CircularProgressIndicator();
+                                    }
+                                    return Text(
+                                      snapshot.data ?? 'Unknown User',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Text(
-                          user?.email ?? '',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -95,7 +140,8 @@ class RightBar extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => SettingPage()),
+                        MaterialPageRoute(
+                            builder: (context) => const SettingPage()),
                       );
                     },
                   ),

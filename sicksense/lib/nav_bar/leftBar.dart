@@ -201,13 +201,13 @@ class LeftBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        child: Row(
-          children: [
-            // Left Section (80%)
-            Container(
-              width: MediaQuery.of(context).size.width * 0.8,
-              // Xóa padding để sát mép trái
+      body: Row(
+        children: [
+          // Left Section (80%)
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: Container(
+              color: Colors.white,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -264,38 +264,38 @@ class LeftBar extends StatelessWidget {
                 ],
               ),
             ),
+          ),
 
-            // Right Section (20%)
-            Container(
-              width: MediaQuery.of(context).size.width * 0.2,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(-1, 0),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.menu,
-                      size: 24,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
+          // Right Section (20%)
+          Container(
+            width: MediaQuery.of(context).size.width * 0.2,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              // boxShadow: [
+              //   BoxShadow(
+              //     color: Colors.grey.withOpacity(0.1),
+              //     spreadRadius: 1,
+              //     blurRadius: 3,
+              //     offset: const Offset(-1, 0),
+              //   ),
+              // ],
             ),
-          ],
-        ),
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                IconButton(
+                  icon: const Icon(
+                    Icons.menu,
+                    size: 24,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

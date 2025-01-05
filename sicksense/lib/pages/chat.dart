@@ -37,8 +37,10 @@ class _ChatState extends State<Chat> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Nhắn tin bác sĩ'),
+        backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.menu), // Menu icon
           onPressed: () {
@@ -95,8 +97,13 @@ class _ChatState extends State<Chat> {
                           : MainAxisAlignment.start,
                       children: [
                         if (!isSender)
-                          const CircleAvatar(
-                            backgroundImage: AssetImage('assets/profile.jpg'),
+                          const Padding(
+                            padding: EdgeInsets.only(
+                                left:
+                                    10.0), // Add right margin to avoid it being too close to the edge
+                            child: CircleAvatar(
+                              backgroundImage: AssetImage('assets/profile.jpg'),
+                            ),
                           ),
                         Container(
                           margin: const EdgeInsets.symmetric(
@@ -110,8 +117,13 @@ class _ChatState extends State<Chat> {
                               style: const TextStyle(color: Colors.white)),
                         ),
                         if (isSender)
-                          const CircleAvatar(
-                            backgroundImage: AssetImage('assets/profile.jpg'),
+                          const Padding(
+                            padding: EdgeInsets.only(
+                                right:
+                                    10.0), // Add right margin to avoid it being too close to the edge
+                            child: CircleAvatar(
+                              backgroundImage: AssetImage('assets/profile.jpg'),
+                            ),
                           ),
                       ],
                     );
@@ -135,6 +147,11 @@ class _ChatState extends State<Chat> {
                     controller: _controller,
                     decoration: InputDecoration(
                       hintText: 'Enter your message...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey
+                            .withOpacity(1.0), // Chỉnh màu mờ cho hintText
+                        fontSize: 16, // Chỉnh kích thước chữ nếu cần
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(50),
                         borderSide: BorderSide.none,

@@ -8,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WebSocketScreen extends StatefulWidget {
+  const WebSocketScreen({super.key});
+
   @override
   _WebSocketScreenState createState() => _WebSocketScreenState();
 }
@@ -48,13 +50,6 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
         _userData = userDoc.data();
       });
     }
-  }
-
-  Future<String> _getCurrentUserName() async {
-    if (_userData != null) {
-      return _userData!['Name'] ?? 'Unknown User';
-    }
-    return 'Unknown User';
   }
 
   void _sendRequest() async {
@@ -147,7 +142,9 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -162,8 +159,8 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.blue,
+                backgroundColor: Colors.black54,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -200,7 +197,7 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
               itemCount: _responses.isEmpty ? 0 : _responses.length,
               itemBuilder: (context, index) {
                 if (_responses.isEmpty) {
-                  return Center(child: Text("No data available"));
+                  return const Center(child: Text("No data available"));
                 }
 
                 bool isUserQuery =
@@ -212,15 +209,20 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
                       : MainAxisAlignment.start,
                   children: [
                     if (!isUserQuery)
-                      const CircleAvatar(
-                        backgroundImage: AssetImage('assets/profile.jpg'),
+                      const Padding(
+                        padding: EdgeInsets.only(
+                            left:
+                                10.0), // Add right margin to avoid it being too close to the edge
+                        child: CircleAvatar(
+                          backgroundImage: AssetImage('assets/profile.jpg'),
+                        ),
                       ),
                     Container(
                       margin: const EdgeInsets.symmetric(
                           vertical: 5,
                           horizontal: 8), // Điều chỉnh khoảng cách hai bên
                       padding: const EdgeInsets.all(8),
-                      constraints: BoxConstraints(
+                      constraints: const BoxConstraints(
                           maxWidth: 280), // Đặt chiều rộng tối đa
                       decoration: BoxDecoration(
                         color: isUserQuery ? Colors.blue : Colors.grey,
@@ -234,8 +236,13 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
                       ),
                     ),
                     if (isUserQuery)
-                      const CircleAvatar(
-                        backgroundImage: AssetImage('assets/profile.jpg'),
+                      const Padding(
+                        padding: EdgeInsets.only(
+                            right:
+                                10.0), // Add right margin to avoid it being too close to the edge
+                        child: CircleAvatar(
+                          backgroundImage: AssetImage('assets/profile.jpg'),
+                        ),
                       ),
                   ],
                 );
@@ -256,7 +263,12 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
                   child: TextField(
                     controller: _controller,
                     decoration: InputDecoration(
-                      hintText: 'Enter your query...',
+                      hintText: 'Enter your message...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey
+                            .withOpacity(1.0), // Chỉnh màu mờ cho hintText
+                        fontSize: 16, // Chỉnh kích thước chữ nếu cần
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(50),
                         borderSide: BorderSide.none,
