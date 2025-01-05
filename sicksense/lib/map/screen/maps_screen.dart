@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({Key? key}) : super(key: key);
@@ -15,15 +17,8 @@ class _MapsScreenState extends State<MapsScreen> {
   LatLng? _currentPosition;
 
   Set<Marker> _markers = {};
-  Set<Circle> _circles = {};
-
-  final List<Map<String, dynamic>> _pharmacies = [
-    {'name': 'Nhà thuốc A', 'location': LatLng(10.7770, 106.7000)},
-    {'name': 'Nhà thuốc B', 'location': LatLng(10.7775, 106.7015)},
-    {'name': 'Nhà thuốc C', 'location': LatLng(10.7800, 106.7030)},
-    {'name': 'Nhà thuốc D', 'location': LatLng(10.7750, 106.6980)},
-    {'name': 'Nhà thuốc E', 'location': LatLng(10.7765, 106.7050)},
-  ];
+  final String _apiKey =
+      'AIzaSyDNI_ZWPqvdS6r6gPVO50I4TlYkfkZdXh8'; // Thay bằng API Key của bạn
 
   @override
   void initState() {
@@ -61,8 +56,7 @@ class _MapsScreenState extends State<MapsScreen> {
 
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
-        _updateMarkerAndCircle(_currentPosition!);
-        _addNearbyPharmacyMarkers(_currentPosition!);
+        _findNearbyPharmacies();
       });
 
       if (mapController != null && _currentPosition != null) {
@@ -75,53 +69,47 @@ class _MapsScreenState extends State<MapsScreen> {
     }
   }
 
-  void _updateMarkerAndCircle(LatLng position) {
-    setState(() {
-      _markers = {
-        Marker(
-          markerId: const MarkerId('currentLocation'),
-          position: position,
-          infoWindow: const InfoWindow(title: "Vị trí hiện tại"),
-        )
-      };
+  Future<void> _findNearbyPharmacies() async {
+    if (_currentPosition == null) return;
 
-      _circles = {
-        Circle(
-          circleId: const CircleId('currentLocationCircle'),
-          center: position,
-          radius: 500, // Bán kính 500m
-          fillColor: Colors.blue.withOpacity(0.3),
-          strokeColor: Colors.blue,
-          strokeWidth: 2,
-        ),
-      };
-    });
-  }
+    final url =
+        'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${_currentPosition!.latitude},${_currentPosition!.longitude}&radius=3000&type=pharmacy&key=$_apiKey';
 
-  void _addNearbyPharmacyMarkers(LatLng currentPosition) {
-    setState(() {
-      for (var pharmacy in _pharmacies) {
-        final pharmacyPosition = pharmacy['location'] as LatLng;
-        final distance = Geolocator.distanceBetween(
-          currentPosition.latitude,
-          currentPosition.longitude,
-          pharmacyPosition.latitude,
-          pharmacyPosition.longitude,
-        );
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-        if (distance <= 500) {
-          _markers.add(
-            Marker(
-              markerId: MarkerId(pharmacy['name']),
-              position: pharmacyPosition,
-              infoWindow: InfoWindow(title: pharmacy['name']),
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueGreen),
-            ),
-          );
+        if (data['status'] == 'OK') {
+          final results = data['results'] as List;
+          setState(() {
+            _markers.clear();
+            for (var result in results) {
+              final location = result['geometry']['location'];
+              final name = result['name'];
+              final lat = location['lat'];
+              final lng = location['lng'];
+
+              _markers.add(
+                Marker(
+                  markerId: MarkerId(name),
+                  position: LatLng(lat, lng),
+                  infoWindow: InfoWindow(title: name),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueGreen),
+                ),
+              );
+            }
+          });
+        } else {
+          _showMessage("Không tìm thấy nhà thuốc gần bạn.");
         }
+      } else {
+        _showMessage("Lỗi khi gọi API: ${response.statusCode}");
       }
-    });
+    } catch (e) {
+      _showMessage("Lỗi khi tìm kiếm nhà thuốc: $e");
+    }
   }
 
   void _showMessage(String message) {
@@ -148,7 +136,7 @@ class _MapsScreenState extends State<MapsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Google Maps Example'),
+        title: const Text('Nhà thuốc gần đây'),
         backgroundColor: Colors.green,
       ),
       body: Stack(
@@ -160,7 +148,6 @@ class _MapsScreenState extends State<MapsScreen> {
               zoom: 15.0,
             ),
             markers: _markers,
-            circles: _circles,
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
           ),
