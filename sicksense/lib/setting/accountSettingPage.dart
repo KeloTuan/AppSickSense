@@ -20,7 +20,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     'Height': false,
     'Weight': false,
     'DateOfBirth': false,
-    'IsDoctor': false,
+    //'IsDoctor': false,
   };
 
   final Map<String, TextEditingController> controllers = {
@@ -31,7 +31,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     'Height': TextEditingController(),
     'Weight': TextEditingController(),
     'DateOfBirth': TextEditingController(),
-    'IsDoctor': TextEditingController(),
+    //'IsDoctor': TextEditingController(),
   };
 
   bool _isLoading = true;
@@ -89,16 +89,16 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
             height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: Colors.blue.withOpacity(0.1),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
+                color: Colors.blue,
                 width: 2,
               ),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.person_outline,
               size: 50,
-              color: Theme.of(context).colorScheme.primary,
+              color: Colors.blue,
             ),
           ),
           const SizedBox(height: 16),
@@ -107,17 +107,9 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 AppLocalizations.of(context)!.no_data,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
           ),
-          // const SizedBox(height: 8),
-          // Text(
-          //   userData['Email']?.toString() ??
-          //       AppLocalizations.of(context)!.no_data,
-          //   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          //         color:
-          //             Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-          //       ),
-          // ),
         ],
       ),
     );
@@ -125,109 +117,101 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
 
   Widget _buildEditableField(String key, IconData icon) {
     final localizations = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: Colors.black54, // Màu của viền
+          width: 1.0, // Độ dày của viền
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child:
-                        Icon(icon, size: 20, color: theme.colorScheme.primary),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  const SizedBox(width: 12),
-                  // Horizontal alignment for data
-                  Expanded(
-                    child: isEditing[key]!
-                        ? TextField(
-                            controller: controllers[key],
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: theme.colorScheme.surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: theme.colorScheme.outline
-                                      .withOpacity(0.3),
-                                ),
+                  child: Icon(icon, size: 20, color: Colors.blue),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: isEditing[key]!
+                      ? TextField(
+                          controller: controllers[key],
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.blue.withOpacity(0.3),
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: theme.colorScheme.outline
-                                      .withOpacity(0.3),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: theme.colorScheme.primary,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.all(16),
                             ),
-                          )
-                        : Text(
-                            userData[key]?.toString() ?? localizations.no_data,
-                            style: theme.textTheme.bodyLarge,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.blue.withOpacity(0.3),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.blue,
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.all(16),
                           ),
+                        )
+                      : Text(
+                          userData[key]?.toString() ?? localizations.no_data,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 8),
+                if (!isEditing[key]!)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: Colors.black,
+                    ),
+                    onPressed: () => setState(() => isEditing[key] = true),
                   ),
-                  const SizedBox(width: 8),
-                  if (!isEditing[key]!)
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () => setState(() => isEditing[key] = true),
-                    ),
-
-                  if (isEditing[key]!) ...[
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          isEditing[key] = false;
-                          controllers[key]!.text =
-                              userData[key]?.toString() ?? '';
-                        });
-                      },
-                      icon: const Icon(Icons.close, size: 18),
-                      color: Theme.of(context)
-                          .colorScheme
-                          .error, // Set color to red for 'close' icon
-                    ),
-                    IconButton(
-                      onPressed: () => _saveFieldToFirebase(key),
-                      icon: const Icon(Icons.check, size: 18),
-                      color: Colors.green, // Green color for check icon
-                    ),
-                  ]
-                ],
-              ),
-            ],
-          ),
+                if (isEditing[key]!) ...[
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        isEditing[key] = false;
+                        controllers[key]!.text =
+                            userData[key]?.toString() ?? '';
+                      });
+                    },
+                    icon: const Icon(Icons.close, size: 18),
+                    color: Colors.red,
+                  ),
+                  IconButton(
+                    onPressed: () => _saveFieldToFirebase(key),
+                    icon: const Icon(Icons.check, size: 18),
+                    color: Colors.green,
+                  ),
+                ]
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -260,11 +244,16 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
               const SizedBox(height: 16),
               Text(
                 'Loading profile...',
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: TextStyle(
+                  color: Colors.blue.shade800,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
@@ -273,15 +262,17 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     }
 
     final localizations = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(localizations.user_info),
+        title: Text(
+          localizations.user_info,
+          style: const TextStyle(color: Colors.black),
+        ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: Colors.white,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -295,7 +286,6 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
           _buildEditableField('Height', Icons.height_outlined),
           _buildEditableField('Weight', Icons.monitor_weight_outlined),
           _buildEditableField('DateOfBirth', Icons.calendar_today_outlined),
-          _buildEditableField('IsDoctor', Icons.medical_services_outlined),
           const SizedBox(height: 24),
         ],
       ),

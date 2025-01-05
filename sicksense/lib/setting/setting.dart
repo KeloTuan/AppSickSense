@@ -14,18 +14,14 @@ class SettingPage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
-            // decoration: BoxDecoration(
-            //   shape: BoxShape.circle,
-            //   color: theme.colorScheme.primary.withOpacity(0.1),
-            // ),
-            child: Icon(
+            child: const Icon(
               Icons.arrow_back,
               color: Colors.black,
               size: 20,
@@ -85,29 +81,31 @@ class SettingPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingCategory({
-    required String title,
-    required IconData icon,
-    required ThemeData theme,
-  }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 20,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
+  // Rest of the code remains the same...
+  // (All other methods remain unchanged)
+  // Widget _buildSettingCategory({
+  //   required String title,
+  //   required IconData icon,
+  //   required ThemeData theme,
+  // }) {
+  //   return Row(
+  //     children: [
+  //       Icon(
+  //         icon,
+  //         color: theme.colorScheme.primary,
+  //         size: 20,
+  //       ),
+  //       const SizedBox(width: 8),
+  //       Text(
+  //         title,
+  //         style: theme.textTheme.titleMedium?.copyWith(
+  //           color: theme.colorScheme.primary,
+  //           fontWeight: FontWeight.bold,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildSettingItem({
     required BuildContext context,
@@ -120,17 +118,14 @@ class SettingPage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: Colors.black54, // Màu của viền
+          width: 1.0, // Độ dày của viền
+        ),
       ),
       child: Material(
         color: Colors.transparent,
