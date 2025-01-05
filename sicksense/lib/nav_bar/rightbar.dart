@@ -2,6 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/auth/login/login_screen.dart';
+<<<<<<< HEAD
+=======
+import 'package:sick_sense_mobile/map/screen/maps_screen.dart';
+>>>>>>> origin/Quy
 import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:sick_sense_mobile/setting/accountSettingPage.dart';
 import 'package:sick_sense_mobile/setting/setting.dart';
@@ -129,7 +133,17 @@ class RightBar extends StatelessWidget {
                     iconColor: Colors.blue,
                     title: localizations.nearbyPharmacies,
                     onTap: () {
+<<<<<<< HEAD
                       // Navigate to pharmacy search
+=======
+                      // Navigate to MapsScreen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const MapsScreen()), // Chuyển hướng đến MapsScreen
+                      );
+>>>>>>> origin/Quy
                     },
                   ),
                   _buildMenuItem(
