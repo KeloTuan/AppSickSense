@@ -31,7 +31,7 @@ class _VerifyState extends State<Verify> {
           .reload(); // Tải lại thông tin người dùng
       if (FirebaseAuth.instance.currentUser!.emailVerified) {
         // Nếu email đã được xác minh, điều hướng về màn hình Chat
-        Get.offAll(Chat());
+        Get.offAll(Chat(friendId: 'someFriendId'));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

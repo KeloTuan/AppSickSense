@@ -20,7 +20,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     'Height': false,
     'Weight': false,
     'DateOfBirth': false,
-    'IsDoctor': false,
+    //'IsDoctor': false,
   };
 
   final Map<String, TextEditingController> controllers = {
@@ -31,7 +31,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     'Height': TextEditingController(),
     'Weight': TextEditingController(),
     'DateOfBirth': TextEditingController(),
-    'IsDoctor': TextEditingController(),
+    //'IsDoctor': TextEditingController(),
   };
 
   bool _isLoading = true;
@@ -52,58 +52,168 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
         if (docSnapshot.exists) {
           final userDataFromFirestore =
               docSnapshot.data() as Map<String, dynamic>;
-
           setState(() {
             userData = userDataFromFirestore;
             _isLoading = false;
-
             controllers.forEach((key, controller) {
               controller.text = userDataFromFirestore[key]?.toString() ?? '';
             });
           });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User data not found')),
-          );
+          _showSnackBar('User data not found');
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading data: $e')),
-      );
+      _showSnackBar('Error loading data: $e');
     }
   }
 
-  Widget _buildEditableField(String label, String key) {
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(12),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Column(
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.blue.withOpacity(0.1),
+              border: Border.all(
+                color: Colors.blue,
+                width: 2,
+              ),
+            ),
+            child: const Icon(
+              Icons.person_outline,
+              size: 50,
+              color: Colors.blue,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            userData['Name']?.toString() ??
+                AppLocalizations.of(context)!.no_data,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditableField(String key, IconData icon) {
     final localizations = AppLocalizations.of(context)!;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: isEditing[key]!
-              ? TextField(
-                  controller: controllers[key],
-                  decoration: InputDecoration(labelText: label),
-                )
-              : Text(
-                  '$label: ${userData[key] ?? localizations.no_data}',
-                  style: const TextStyle(fontSize: 18),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.black54, // Màu của viền
+          width: 1.0, // Độ dày của viền
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 20, color: Colors.blue),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: isEditing[key]!
+                      ? TextField(
+                          controller: controllers[key],
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.blue.withOpacity(0.3),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.blue.withOpacity(0.3),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Colors.blue,
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.all(16),
+                          ),
+                        )
+                      : Text(
+                          userData[key]?.toString() ?? localizations.no_data,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 8),
+                if (!isEditing[key]!)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: Colors.black,
+                    ),
+                    onPressed: () => setState(() => isEditing[key] = true),
+                  ),
+                if (isEditing[key]!) ...[
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        isEditing[key] = false;
+                        controllers[key]!.text =
+                            userData[key]?.toString() ?? '';
+                      });
+                    },
+                    icon: const Icon(Icons.close, size: 18),
+                    color: Colors.red,
+                  ),
+                  IconButton(
+                    onPressed: () => _saveFieldToFirebase(key),
+                    icon: const Icon(Icons.check, size: 18),
+                    color: Colors.green,
+                  ),
+                ]
+              ],
+            ),
+          ],
         ),
-        IconButton(
-          icon: Icon(isEditing[key]! ? Icons.save : Icons.edit),
-          onPressed: () {
-            if (isEditing[key]!) {
-              _saveFieldToFirebase(key);
-            } else {
-              setState(() {
-                isEditing[key] = true;
-              });
-            }
-          },
-        ),
-      ],
+      ),
     );
   }
 
@@ -112,24 +222,17 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final ref = FirebaseFirestore.instance.collection('User').doc(user.uid);
-
-        await ref.update({
-          key: controllers[key]!.text,
-        });
+        await ref.update({key: controllers[key]!.text});
 
         setState(() {
           userData[key] = controllers[key]!.text;
           isEditing[key] = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.update_success)),
-        );
+        _showSnackBar(AppLocalizations.of(context)!.update_success);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating $key: $e')),
-      );
+      _showSnackBar('Error updating $key: $e');
     }
   }
 
@@ -137,37 +240,54 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Loading profile...',
+                style: TextStyle(
+                  color: Colors.blue.shade800,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(localizations.user_info),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            _buildEditableField(localizations.name, 'Name'),
-            const Divider(),
-            _buildEditableField(localizations.phone, 'Phone'),
-            const Divider(),
-            _buildEditableField(localizations.email, 'Email'),
-            const Divider(),
-            _buildEditableField(localizations.gender, 'Gender'),
-            const Divider(),
-            _buildEditableField(localizations.height, 'Height'),
-            const Divider(),
-            _buildEditableField(localizations.weight, 'Weight'),
-            const Divider(),
-            _buildEditableField(localizations.dob, 'DateOfBirth'),
-            const Divider(),
-            _buildEditableField(localizations.is_doctor, 'IsDoctor'),
-          ],
+        title: Text(
+          localizations.user_info,
+          style: const TextStyle(color: Colors.black),
         ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.white,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          _buildProfileHeader(),
+          const SizedBox(height: 16),
+          _buildEditableField('Name', Icons.person_outline),
+          _buildEditableField('Phone', Icons.phone_outlined),
+          _buildEditableField('Email', Icons.email_outlined),
+          _buildEditableField('Gender', Icons.people_outline),
+          _buildEditableField('Height', Icons.height_outlined),
+          _buildEditableField('Weight', Icons.monitor_weight_outlined),
+          _buildEditableField('DateOfBirth', Icons.calendar_today_outlined),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
