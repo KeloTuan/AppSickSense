@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sick_sense_mobile/auth/home_screen.dart';
 import 'package:sick_sense_mobile/auth/signup/sign_up_screen.dart';
 import 'package:sick_sense_mobile/auth/comfirm/recovery_email_address.dart';
@@ -15,6 +16,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
   bool isLoading = false;
   bool _obscurePassword = true;
 
@@ -29,6 +33,35 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     });
+  }
+
+  Future<User?> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return null;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+
+      return userCredential.user;
+    } catch (e) {
+      Get.snackbar(
+        "Lỗi đăng nhập",
+        "Không thể đăng nhập bằng Google",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red[100],
+        colorText: Colors.red[900],
+      );
+      return null;
+    }
   }
 
   signIn() async {
@@ -130,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue[700], // Màu xanh dương cho tiêu đề
+                        color: Colors.blue[700],
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -148,12 +181,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: 'Email',
-                        //hintText: 'Nhập địa chỉ email của bạn',
                         prefixIcon:
                             Icon(Icons.email_outlined, color: Colors.blue[300]),
                         labelStyle: TextStyle(color: Colors.grey[600]),
                         filled: true,
-                        fillColor: Colors.blue[50], // Nền màu trắng
+                        fillColor: Colors.blue[50],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -166,20 +198,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
                     // Password field
                     TextFormField(
                       controller: password,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         labelText: 'Mật khẩu',
-                        //hintText: 'Nhập mật khẩu của bạn',
                         prefixIcon:
                             Icon(Icons.lock_outline, color: Colors.blue[300]),
-                        labelStyle: TextStyle(
-                            color: Colors.grey[600]), // Chữ màu grey[600]
+                        labelStyle: TextStyle(color: Colors.grey[600]),
                         filled: true,
-                        fillColor: Colors.blue[50], // Nền màu trắng
+                        fillColor: Colors.blue[50],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -194,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             _obscurePassword
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
-                            color: Colors.blue[300], // Giữ nguyên màu của icon
+                            color: Colors.blue[300],
                           ),
                           onPressed: () {
                             setState(() {
@@ -204,9 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 12),
-                    // Forgot password
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -216,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Text(
                           'Quên mật khẩu?',
                           style: TextStyle(
-                            color: Colors.blue[700], // Màu xanh dương cho link
+                            color: Colors.blue[700],
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -226,8 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Login button
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.blue[700], // Màu xanh dương cho nút
+                        backgroundColor: Colors.blue[700],
                         foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 55),
                         shape: RoundedRectangleBorder(
@@ -255,60 +281,65 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                     const SizedBox(height: 20),
-                    // Sign up link
+                    // Google Sign-In button
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 55),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        elevation: 2,
+                      ),
+                      onPressed: () async {
+                        User? user = await signInWithGoogle();
+                        if (user != null) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const HomeScreen()),
+                          );
+                        }
+                      },
+                      child: const Text("Đăng nhập bằng Google"),
+                    ),
+
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           "Chưa có tài khoản? ",
                           style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 15,
+                            fontSize: 16,
+                            color: Colors.grey[700],
                           ),
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => SignUpScreen()),
-                            );
+                            Get.to(() => SignUpScreen());
                           },
                           child: Text(
                             "Đăng ký ngay",
                             style: TextStyle(
-                              color:
-                                  Colors.blue[700], // Màu xanh dương cho link
+                              fontSize: 16,
+                              color: Colors.blue[700],
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
                             ),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
           ),
-          if (isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-            ),
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    email.dispose();
-    password.dispose();
-    super.dispose();
   }
 }
