@@ -3,25 +3,23 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 
 class SummarizeWebSocketService {
-  final String uri;
   late WebSocketChannel _channel;
 
-  SummarizeWebSocketService(this.uri);
-
-  void connect() {
-    _channel = WebSocketChannel.connect(Uri.parse(uri));
+  // Hàm để kết nối với WebSocket
+  void connect(String url) {
+    _channel = WebSocketChannel.connect(Uri.parse(url));
   }
 
-  void sendMessage(Map<String, dynamic> message) {
-    final jsonMessage = jsonEncode(message);
-    _channel.sink.add(jsonMessage);
+  // Hàm gửi tin nhắn qua WebSocket
+  void sendMessage(String message) {
+    _channel.sink.add(message);
   }
 
-  Stream<dynamic> getMessages() {
-    return _channel.stream;
-  }
+  // Stream nhận các tin nhắn từ WebSocket
+  Stream<dynamic> get messages => _channel.stream;
 
-  void closeConnection() {
-    _channel.sink.close(status.goingAway);
+  // Hàm đóng kết nối WebSocket
+  void disconnect() {
+    _channel.sink.close();
   }
 }

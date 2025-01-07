@@ -8,7 +8,7 @@ import 'package:sick_sense_mobile/pages/chat_service.dart';
 import 'package:sick_sense_mobile/summarize/summarize_websocket_screen.dart';
 
 class Chat extends StatefulWidget {
-  final String friendId; // ID của bạn bè để tạo cuộc trò chuyện
+  final String friendId;
 
   const Chat({super.key, required this.friendId});
 
@@ -20,14 +20,29 @@ class _ChatState extends State<Chat> {
   final TextEditingController _controller = TextEditingController();
   late String conversationId;
   late ChatService chatService;
-
-  get friendId => null;
+  bool? isDoctor;
 
   @override
   void initState() {
     super.initState();
     chatService = ChatService();
     conversationId = chatService.generateConversationId(widget.friendId);
+    _checkIfDoctor();
+  }
+
+  Future<void> _checkIfDoctor() async {
+    final firestore = FirebaseFirestore.instance;
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      final userDoc =
+          await firestore.collection('User').doc(currentUser.uid).get();
+      if (userDoc.exists) {
+        setState(() {
+          isDoctor = userDoc.data()?['IsDoctor'] ?? false;
+        });
+      }
+    }
   }
 
   void _sendMessage(String message) async {
@@ -37,64 +52,69 @@ class _ChatState extends State<Chat> {
     }
   }
 
+  Widget _buildAppBar(BuildContext context, AppLocalizations localizations) {
+    return AppBar(
+      title: Center(
+        child: isDoctor == true
+            ? ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SummarizeWebsocketScreen(
+                        userId: widget.friendId, // Truyền userId của bệnh nhân
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black54,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(localizations.summary),
+              )
+            : null,
+      ),
+      backgroundColor: Colors.white,
+      leading: IconButton(
+        icon: const Icon(Icons.menu),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LeftBar(),
+            ),
+          );
+        },
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.more_vert),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const RightBar(),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Center(
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      SummarizeWebsocketScreen(userId: friendId),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black54,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(localizations.summary), // Button text from localization
-          ),
-        ),
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.menu), // Menu icon
-          onPressed: () {
-            // Show the LeftBar when the menu icon is pressed
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const LeftBar(),
-              ),
-            );
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const RightBar(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: _buildAppBar(context, localizations) as PreferredSizeWidget,
       body: Column(
         children: [
-          // Hiển thị tin nhắn từ Firestore
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: chatService.getMessages(conversationId),
@@ -122,9 +142,7 @@ class _ChatState extends State<Chat> {
                       children: [
                         if (!isSender)
                           const Padding(
-                            padding: EdgeInsets.only(
-                                left:
-                                    10.0), // Add right margin to avoid it being too close to the edge
+                            padding: EdgeInsets.only(left: 10.0),
                             child: CircleAvatar(
                               backgroundImage: AssetImage('assets/profile.jpg'),
                             ),
@@ -142,9 +160,7 @@ class _ChatState extends State<Chat> {
                         ),
                         if (isSender)
                           const Padding(
-                            padding: EdgeInsets.only(
-                                right:
-                                    10.0), // Add right margin to avoid it being too close to the edge
+                            padding: EdgeInsets.only(right: 10.0),
                             child: CircleAvatar(
                               backgroundImage: AssetImage('assets/profile.jpg'),
                             ),
@@ -156,8 +172,6 @@ class _ChatState extends State<Chat> {
               },
             ),
           ),
-
-          // Modified message input section
           Container(
             margin: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
@@ -172,9 +186,8 @@ class _ChatState extends State<Chat> {
                     decoration: InputDecoration(
                       hintText: localizations.enterMessage,
                       hintStyle: TextStyle(
-                        color: Colors.grey
-                            .withOpacity(1.0), // Chỉnh màu mờ cho hintText
-                        fontSize: 16, // Chỉnh kích thước chữ nếu cần
+                        color: Colors.grey.withOpacity(1.0),
+                        fontSize: 16,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(50),
@@ -191,7 +204,7 @@ class _ChatState extends State<Chat> {
                       _sendMessage(_controller.text);
                     }
                   },
-                  icon: const Icon(Icons.arrow_circle_up), // Custom send icon
+                  icon: const Icon(Icons.arrow_circle_up),
                 ),
               ],
             ),

@@ -194,8 +194,7 @@ class LeftBar extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (context) => const WebSocketScreen()),
+                MaterialPageRoute(builder: (context) => WebSocketScreen()),
               );
             },
           ),
