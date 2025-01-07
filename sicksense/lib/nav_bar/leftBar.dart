@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sick_sense_mobile/pages/chat.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sick_sense_mobile/ask_disease/websocket_screen.dart';
 
 class LeftBar extends StatelessWidget {
@@ -87,8 +88,10 @@ class LeftBar extends StatelessWidget {
     );
   }
 
-  Widget _buildExpandableTile(
-      String title, double fontSize, Future<QuerySnapshot> futureList) {
+  Widget _buildExpandableTile(BuildContext context, String title,
+      double fontSize, Future<QuerySnapshot> futureList) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Theme(
       data: ThemeData(
         dividerColor: Colors.transparent,
@@ -122,17 +125,17 @@ class LeftBar extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(20),
                   alignment: Alignment.center,
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.person_off_outlined,
                         size: 48,
                         color: Colors.black,
                       ),
-                      SizedBox(height: 12),
+                      const SizedBox(height: 12),
                       Text(
-                        'Không tìm thấy người dùng nào',
-                        style: TextStyle(
+                        localizations.noUsersFound,
+                        style: const TextStyle(
                           color: Colors.black,
                           fontSize: 16,
                         ),
@@ -158,6 +161,8 @@ class LeftBar extends StatelessWidget {
 
   Widget _buildWebSocketTile(
       BuildContext context, String title, double fontSize) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Theme(
       data: ThemeData(
         dividerColor: Colors.transparent,
@@ -182,14 +187,15 @@ class LeftBar extends StatelessWidget {
               Icons.arrow_forward_ios,
               color: Colors.blue,
             ),
-            title: const Text(
-              'Đi đến cuộc trò chuyện với AI',
-              style: TextStyle(fontSize: 16),
+            title: Text(
+              localizations.goToChatWithAI,
+              style: const TextStyle(fontSize: 16),
             ),
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => WebSocketScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const WebSocketScreen()),
               );
             },
           ),
@@ -200,10 +206,11 @@ class LeftBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Row(
         children: [
-          // Left Section (80%)
           SizedBox(
             width: MediaQuery.of(context).size.width * 0.8,
             child: Container(
@@ -211,25 +218,41 @@ class LeftBar extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Dòng chữ "Kiểm thử WebSocket" với khoảng cách phía trên
                   Expanded(
                     child: ListView(
                       children: [
                         _buildWebSocketTile(
-                            context, 'Trò chuyện cùng AI', 20.0),
-                        _buildExpandableTile(
-                          'Trò chuyện cùng bác sĩ',
-                          20.0,
-                          _getDoctorsList(),
+                            context, localizations.chatWithAI, 20.0),
+                        FutureBuilder<bool>(
+                          future: _isCurrentUserDoctor(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                            final title = snapshot.data == true
+                                ? localizations.chatWithPatients
+                                : localizations.chatWithDoctors;
+                            return _buildExpandableTile(
+                              context,
+                              title,
+                              20.0,
+                              _getDoctorsList(),
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
-
                   Container(
                     padding: const EdgeInsets.all(16),
-                    margin: const EdgeInsets.only(
-                        right: 16, top: 16, bottom: 16), // Giữ cách bên phải
+                    margin:
+                        const EdgeInsets.only(right: 16, top: 16, bottom: 16),
                     child: Row(
                       children: [
                         CircleAvatar(
@@ -249,7 +272,7 @@ class LeftBar extends StatelessWidget {
                                 return const CircularProgressIndicator();
                               }
                               return Text(
-                                snapshot.data ?? 'Unknown User',
+                                snapshot.data ?? localizations.unknownUser,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
@@ -265,20 +288,10 @@ class LeftBar extends StatelessWidget {
               ),
             ),
           ),
-
-          // Right Section (20%)
           Container(
             width: MediaQuery.of(context).size.width * 0.2,
             decoration: BoxDecoration(
               color: Colors.grey[200],
-              // boxShadow: [
-              //   BoxShadow(
-              //     color: Colors.grey.withOpacity(0.1),
-              //     spreadRadius: 1,
-              //     blurRadius: 3,
-              //     offset: const Offset(-1, 0),
-              //   ),
-              // ],
             ),
             child: Column(
               children: [

@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/nav_bar/leftBar.dart';
 import 'package:sick_sense_mobile/nav_bar/rightbar.dart';
-import 'package:sick_sense_mobile/summarize/summarize_websocket_screen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class WebSocketScreen extends StatefulWidget {
   const WebSocketScreen({super.key});
@@ -22,6 +22,7 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
   late User _currentUser;
   Map<String, dynamic>? _userData;
   List<bool> _isUserQuery = [];
+  String _summaryText = ""; // Để lưu nội dung tóm tắt
 
   @override
   void initState() {
@@ -95,7 +96,7 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
   }
 
   void _connectWebSocket() {
-    final uri = Uri.parse("ws://26.223.117.204:8000/ws/query");
+    final uri = Uri.parse("ws://172.20.10.6:8123/ws/query");
     print("Connecting to websocket at: $uri");
     try {
       _channel = WebSocketChannel.connect(uri);
@@ -141,6 +142,8 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -148,25 +151,8 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Nhắn tin AI'),
+            Text(localizations.chatWithAI),
             const SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const SummarizeWebsocketScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black54,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Tóm tắt'),
-            ),
           ],
         ),
         leading: IconButton(
@@ -263,7 +249,7 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
                   child: TextField(
                     controller: _controller,
                     decoration: InputDecoration(
-                      hintText: 'Enter your message...',
+                      hintText: localizations.enterMessage,
                       hintStyle: TextStyle(
                         color: Colors.grey
                             .withOpacity(1.0), // Chỉnh màu mờ cho hintText

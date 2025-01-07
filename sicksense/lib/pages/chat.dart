@@ -5,6 +5,7 @@ import 'package:sick_sense_mobile/nav_bar/leftBar.dart';
 import 'package:sick_sense_mobile/nav_bar/rightbar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sick_sense_mobile/pages/chat_service.dart';
+import 'package:sick_sense_mobile/summarize/summarize_websocket_screen.dart';
 
 class Chat extends StatefulWidget {
   final String friendId; // ID của bạn bè để tạo cuộc trò chuyện
@@ -19,6 +20,8 @@ class _ChatState extends State<Chat> {
   final TextEditingController _controller = TextEditingController();
   late String conversationId;
   late ChatService chatService;
+
+  get friendId => null;
 
   @override
   void initState() {
@@ -36,10 +39,32 @@ class _ChatState extends State<Chat> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Nhắn tin bác sĩ'),
+        title: Center(
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      SummarizeWebsocketScreen(userId: friendId),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black54,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(localizations.summary), // Button text from localization
+          ),
+        ),
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.menu), // Menu icon
@@ -48,21 +73,20 @@ class _ChatState extends State<Chat> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const LeftBar()), // Navigate to LeftBar
+                builder: (context) => const LeftBar(),
+              ),
             );
           },
         ),
         actions: [
-          // Icon on the right side of the AppBar (more_vert)
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {
-              // Show the RightBar when the more_vert icon is pressed
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) =>
-                        const RightBar()), // Navigate to RightBar
+                  builder: (context) => const RightBar(),
+                ),
               );
             },
           ),
@@ -80,7 +104,7 @@ class _ChatState extends State<Chat> {
                 }
 
                 if (snapshot.data == null || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No messages yet.'));
+                  return Center(child: Text(localizations.noMessageYet));
                 }
 
                 final messages = snapshot.data!;
@@ -146,7 +170,7 @@ class _ChatState extends State<Chat> {
                   child: TextField(
                     controller: _controller,
                     decoration: InputDecoration(
-                      hintText: 'Enter your message...',
+                      hintText: localizations.enterMessage,
                       hintStyle: TextStyle(
                         color: Colors.grey
                             .withOpacity(1.0), // Chỉnh màu mờ cho hintText
