@@ -18,7 +18,7 @@ class _MapsScreenState extends State<MapsScreen> {
 
   Set<Marker> _markers = {};
   final String _apiKey =
-      'AIzaSyDNI_ZWPqvdS6r6gPVO50I4TlYkfkZdXh8'; // Thay bằng API Key của bạn
+      'AIzaSyCifqIDaispEaShRMmXLUNiTnJ4R0QEgsk'; // Thay bằng API Key của bạn
 
   @override
   void initState() {

@@ -104,26 +104,21 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
 
   Future<void> _saveAvatarToFirestore(String base64Image) async {
     try {
-      // Assuming the current user is logged in and we have the user ID
-      String userId =
-          'jA8DzKeWpeR03QRhr70sEjNexHd2'; // Replace with your actual user ID or FirebaseAuth currentUser ID
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
 
-      // Create a new 'Avatar' document in the 'User' collection and save the Base64 image string
       await FirebaseFirestore.instance
           .collection('User')
-          .doc(userId)
-          .collection(
-              'Avatar') // Use 'Avatar' collection instead of nested 'avatar' collection
-          .doc(
-              'image') // You can leave this document name as 'image' or choose something else
-          .set({
-        'image': base64Image,
-        'timestamp': FieldValue.serverTimestamp(),
+          .doc(currentUser.uid)
+          .update({
+        'avatar': base64Image,
+        'avatarUpdatedAt': FieldValue.serverTimestamp(),
       });
-
-      print("Avatar saved successfully.");
     } catch (e) {
-      print("Error saving avatar to Firestore: $e");
+      print('Error saving avatar: $e');
+      rethrow; // Allow caller to handle error
     }
   }
 
@@ -154,10 +149,10 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 width: 2,
               ),
             ),
-            child: _selectedImage != null
+            child: userData['avatar'] != null && userData['avatar'].isNotEmpty
                 ? ClipOval(
-                    child: Image.file(
-                      _selectedImage!,
+                    child: Image.memory(
+                      base64Decode(userData['avatar']),
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
