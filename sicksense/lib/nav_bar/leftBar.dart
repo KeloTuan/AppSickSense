@@ -1,13 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sick_sense_mobile/auth/login/login_screen.dart';
 import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sick_sense_mobile/ask_disease/websocket_screen.dart';
 import 'package:sick_sense_mobile/stripe_service.dart';
 
-class LeftBar extends StatelessWidget {
+class LeftBar extends StatefulWidget {
   const LeftBar({super.key});
+
+  @override
+  State<LeftBar> createState() => _LeftBarState();
+}
+
+class _LeftBarState extends State<LeftBar> {
+  bool? _cachedPaymentStatus;
+  StreamSubscription<DocumentSnapshot>? _paymentStatusSubscription;
 
   Future<bool> _isCurrentUserDoctor() async {
     final firestore = FirebaseFirestore.instance;
@@ -61,6 +72,7 @@ class LeftBar extends StatelessWidget {
     if (currentUser != null) {
       final userDoc =
           await firestore.collection('User').doc(currentUser.uid).get();
+
       if (userDoc.exists) {
         return userDoc.data()?['HasPaid'] ?? false;
       }
@@ -75,6 +87,127 @@ class LeftBar extends StatelessWidget {
     if (currentUser != null) {
       await firestore.collection('User').doc(currentUser.uid).update({
         'HasPaid': true,
+        'PaymentTimestamp': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  Future<void> _handlePayment(BuildContext context) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Get current user
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Attempt payment
+      await StripeService.instance.makePayment();
+
+      // If payment is successful, update Firestore
+      await FirebaseFirestore.instance
+          .collection('User')
+          .doc(currentUser.uid)
+          .update({
+        'HasPaid': true,
+        'PaymentTimestamp': FieldValue.serverTimestamp(),
+        'PaymentAmount': 100, // Store the amount paid
+        'PaymentCurrency': 'usd'
+      });
+
+      // Close loading indicator
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      // Refresh the UI
+      if (context.mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      // Close loading indicator if showing
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      if (context.mounted) {
+        // Navigate to login screen and remove all previous routes
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _setupPaymentStatusListener();
+  }
+
+  void _setupPaymentStatusListener() {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      _paymentStatusSubscription = FirebaseFirestore.instance
+          .collection('User')
+          .doc(currentUser.uid)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.exists) {
+          final newPaymentStatus = snapshot.data()?['HasPaid'] ?? false;
+          if (_cachedPaymentStatus != newPaymentStatus) {
+            setState(() {
+              _cachedPaymentStatus = newPaymentStatus;
+            });
+          }
+        }
       });
     }
   }
@@ -137,9 +270,9 @@ class LeftBar extends StatelessWidget {
         ),
         children: [
           FutureBuilder<bool>(
-            future: _checkPaymentStatus(), // Kiểm tra trạng thái thanh toán
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+            future: _checkPaymentStatus(),
+            builder: (context, paymentSnapshot) {
+              if (paymentSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(20.0),
@@ -148,21 +281,18 @@ class LeftBar extends StatelessWidget {
                 );
               }
 
-              if (snapshot.data == false) {
+              if (paymentSnapshot.data == false) {
                 return Container(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Icon cảnh báo
                       const Icon(
                         Icons.payment_outlined,
                         size: 64,
                         color: Colors.orange,
                       ),
                       const SizedBox(height: 16),
-
-                      // Thông báo thanh toán
                       Text(
                         localizations.paymentRequired,
                         textAlign: TextAlign.center,
@@ -173,13 +303,76 @@ class LeftBar extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Nút thanh toán
                       ElevatedButton(
-                        onPressed: () {
-                          StripeService.instance.makePayment().then((_) {
-                            _savePaymentStatus();
-                          });
+                        onPressed: () async {
+                          try {
+                            // Hiển thị loading indicator trong BuildContext hiện tại
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (BuildContext context) {
+                                return WillPopScope(
+                                  onWillPop: () async => false,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              },
+                            );
+
+                            // Thực hiện thanh toán
+                            await StripeService.instance.makePayment();
+
+                            // Cập nhật trạng thái thanh toán
+                            await _savePaymentStatus();
+
+                            // Đóng loading indicator
+                            if (context.mounted) {
+                              Navigator.pop(context); // Đóng loading indicator
+
+                              // Hiển thị dialog thành công
+                              await showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext context) {
+                                  return WillPopScope(
+                                    onWillPop: () async => false,
+                                    child: AlertDialog(
+                                      title: const Text('Payment Successful'),
+                                      content: const Text(
+                                          'Payment completed successfully. Please log in again to continue.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(
+                                                context); // Đóng dialog thành công
+                                            await _handleLogout(
+                                                context); // Xử lý đăng xuất
+                                          },
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            }
+                          } catch (e) {
+                            // Đóng loading indicator nếu có lỗi
+                            if (context.mounted) {
+                              Navigator.pop(context);
+
+                              // Hiển thị thông báo lỗi
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text('Payment failed: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
@@ -420,5 +613,11 @@ class LeftBar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _paymentStatusSubscription?.cancel();
+    super.dispose();
   }
 }
