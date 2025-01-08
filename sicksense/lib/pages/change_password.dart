@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sick_sense_mobile/setting/setting.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChangePassword extends StatefulWidget {
   const ChangePassword({super.key});
@@ -30,7 +31,7 @@ class _ChangePasswordPageState extends State<ChangePassword> {
       if (user == null || user.email == null) {
         throw FirebaseAuthException(
           code: 'user-not-found',
-          message: 'Vui lòng đăng nhập lại để thực hiện thao tác này.',
+          message: AppLocalizations.of(context)!.pleaseReloginMessage,
         );
       }
 
@@ -46,8 +47,8 @@ class _ChangePasswordPageState extends State<ChangePassword> {
       if (!mounted) return;
 
       Get.snackbar(
-        "Thành công",
-        "Đổi mật khẩu thành công!",
+        AppLocalizations.of(context)!.success,
+        AppLocalizations.of(context)!.passwordChangeSuccess,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green[100],
         colorText: Colors.green[900],
@@ -64,15 +65,16 @@ class _ChangePasswordPageState extends State<ChangePassword> {
       if (!mounted) return;
 
       String errorMessage = switch (e.code) {
-        'invalid-credential' => 'Mật khẩu hiện tại không chính xác.',
-        'weak-password' => 'Mật khẩu mới quá yếu.',
+        'invalid-credential' =>
+          AppLocalizations.of(context)!.incorrectCurrentPassword,
+        'weak-password' => AppLocalizations.of(context)!.weakPassword,
         'requires-recent-login' =>
-          'Vui lòng đăng nhập lại để thực hiện thao tác này.',
-        _ => e.message ?? 'Đã xảy ra lỗi không xác định.'
+          AppLocalizations.of(context)!.pleaseReloginMessage,
+        _ => e.message ?? AppLocalizations.of(context)!.unknownError
       };
 
       Get.snackbar(
-        "Lỗi",
+        AppLocalizations.of(context)!.error,
         errorMessage,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red[100],
@@ -130,12 +132,14 @@ class _ChangePasswordPageState extends State<ChangePassword> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Đổi mật khẩu',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        title: Text(
+          localizations.changePassword,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -157,7 +161,6 @@ class _ChangePasswordPageState extends State<ChangePassword> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                // Icon và text hướng dẫn
                 const Icon(
                   Icons.lock_outline,
                   size: 64,
@@ -165,7 +168,7 @@ class _ChangePasswordPageState extends State<ChangePassword> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Tạo mật khẩu mới an toàn',
+                  localizations.createNewSecurePassword,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -175,7 +178,7 @@ class _ChangePasswordPageState extends State<ChangePassword> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Mật khẩu phải có ít nhất 6 ký tự và nên bao gồm chữ hoa, chữ thường và số.',
+                  localizations.passwordRequirements,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -183,75 +186,68 @@ class _ChangePasswordPageState extends State<ChangePassword> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-
-                // Form fields
                 TextFormField(
                   controller: _oldPasswordController,
                   obscureText: !_showOldPassword,
                   decoration: _getInputDecoration(
-                    label: 'Mật khẩu hiện tại',
+                    label: localizations.currentPassword,
                     showPassword: _showOldPassword,
                     onToggleVisibility: () =>
                         setState(() => _showOldPassword = !_showOldPassword),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Vui lòng nhập mật khẩu hiện tại';
+                      return localizations.pleaseEnterCurrentPassword;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
-
                 TextFormField(
                   controller: _newPasswordController,
                   obscureText: !_showNewPassword,
                   decoration: _getInputDecoration(
-                    label: 'Mật khẩu mới',
+                    label: localizations.newPassword,
                     showPassword: _showNewPassword,
                     onToggleVisibility: () =>
                         setState(() => _showNewPassword = !_showNewPassword),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Vui lòng nhập mật khẩu mới';
+                      return localizations.pleaseEnterNewPassword;
                     }
                     if (value!.length < 6) {
-                      return 'Mật khẩu phải có ít nhất 6 kí tự';
+                      return localizations.passwordMinLength;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
-
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: !_showConfirmPassword,
                   decoration: _getInputDecoration(
-                    label: 'Xác nhận mật khẩu mới',
+                    label: localizations.confirmNewPassword,
                     showPassword: _showConfirmPassword,
                     onToggleVisibility: () => setState(
                         () => _showConfirmPassword = !_showConfirmPassword),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return 'Vui lòng xác nhận mật khẩu mới';
+                      return localizations.pleaseConfirmNewPassword;
                     }
                     if (value != _newPasswordController.text) {
-                      return 'Mật khẩu xác nhận không khớp';
+                      return localizations.passwordsDoNotMatch;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 32),
-
-                // Submit button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _changePassword,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[300],
                     foregroundColor: Colors.grey[900],
-                    //color: Colors.grey[800],
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -268,9 +264,9 @@ class _ChangePasswordPageState extends State<ChangePassword> {
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
-                          'Đổi mật khẩu',
-                          style: TextStyle(
+                      : Text(
+                          localizations.changePassword,
+                          style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                 ),

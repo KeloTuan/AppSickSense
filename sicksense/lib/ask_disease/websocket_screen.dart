@@ -8,8 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WebSocketScreen extends StatefulWidget {
-  const WebSocketScreen({super.key});
-
   @override
   _WebSocketScreenState createState() => _WebSocketScreenState();
 }
@@ -50,6 +48,13 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
         _userData = userDoc.data();
       });
     }
+  }
+
+  Future<String> _getCurrentUserName() async {
+    if (_userData != null) {
+      return _userData!['Name'] ?? 'Unknown User';
+    }
+    return 'Unknown User';
   }
 
   void _sendRequest() async {
@@ -95,19 +100,27 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
   }
 
   void _connectWebSocket() {
-    final uri = Uri.parse("ws://26.223.117.204:8000/ws/query");
+    final uri = Uri.parse("ws://192.168.1.16:8123/ws/query");
     print("Connecting to websocket at: $uri");
     try {
       _channel = WebSocketChannel.connect(uri);
 
+      String buffer = ""; // Bộ đệm để ghép dữ liệu từ server
+
       _channel.stream.listen((response) {
         setState(() {
-          _responses.add(response); // Thêm phản hồi từ WebSocket
-          _isUserQuery.add(false); // Đánh dấu là phản hồi từ server
+          buffer += response; // Ghép đoạn dữ liệu vào bộ đệm
+
+          // Kiểm tra nếu response chứa tín hiệu kết thúc (tuỳ vào cấu trúc của server)
+          if (response.endsWith("\n") || response.endsWith("\r")) {
+            // Khi nhận đủ nội dung, thêm vào danh sách hiển thị
+            _responses.add(buffer.trim());
+            _isUserQuery.add(false); // Đánh dấu là phản hồi từ server
+
+            // Xóa bộ đệm sau khi đã xử lý
+            buffer = "";
+          }
         });
-        if (response == "END") {
-          _channel.sink.close();
-        }
       }, onError: (error) {
         setState(() {
           _responses.add("Error: $error");
@@ -139,34 +152,52 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
     super.dispose();
   }
 
+  // Hàm xử lý in đậm các đoạn văn bản giữa dấu **
+  Text _formatResponse(String response) {
+    List<TextSpan> textSpans = [];
+    bool isBold = false; // Trạng thái để kiểm tra có in đậm hay không
+    int start = 0;
+
+    for (int i = 0; i < response.length; i++) {
+      if (response[i] == '*' &&
+          i + 1 < response.length &&
+          response[i + 1] == '*') {
+        // Khi gặp dấu **, tạo TextSpan với phần trước đó
+        if (start < i) {
+          textSpans.add(TextSpan(
+            text: response.substring(start, i),
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal),
+          ));
+        }
+        isBold = !isBold; // Đổi trạng thái in đậm
+        i++; // Bỏ qua ký tự tiếp theo vì đã xử lý dấu **
+        start = i + 1; // Cập nhật điểm bắt đầu của chuỗi tiếp theo
+      }
+    }
+
+    // Thêm phần còn lại của chuỗi
+    if (start < response.length) {
+      textSpans.add(TextSpan(
+        text: response.substring(start),
+        style: TextStyle(
+            color: Colors.white,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal),
+      ));
+    }
+
+    return Text.rich(TextSpan(children: textSpans));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Row(
+        title: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Nhắn tin AI'),
-            const SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const SummarizeWebsocketScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black54,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Tóm tắt'),
-            ),
+            Text('Nhắn tin AI'),
           ],
         ),
         leading: IconButton(
@@ -209,40 +240,30 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
                       : MainAxisAlignment.start,
                   children: [
                     if (!isUserQuery)
-                      const Padding(
-                        padding: EdgeInsets.only(
-                            left:
-                                10.0), // Add right margin to avoid it being too close to the edge
-                        child: CircleAvatar(
-                          backgroundImage: AssetImage('assets/profile.jpg'),
-                        ),
+                      const CircleAvatar(
+                        backgroundImage: AssetImage('assets/profile.jpg'),
                       ),
                     Container(
                       margin: const EdgeInsets.symmetric(
-                          vertical: 5,
-                          horizontal: 8), // Điều chỉnh khoảng cách hai bên
+                          vertical: 5, horizontal: 8),
                       padding: const EdgeInsets.all(8),
                       constraints: const BoxConstraints(
-                          maxWidth: 280), // Đặt chiều rộng tối đa
+                        maxWidth: 300, // Điều chỉnh giới hạn chiều rộng
+                      ),
                       decoration: BoxDecoration(
                         color: isUserQuery ? Colors.blue : Colors.grey,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
-                        _responses[index],
-                        style: const TextStyle(color: Colors.white),
-                        softWrap: true,
-                        overflow: TextOverflow.visible,
-                      ),
+                      child: _formatResponse(_responses[index]
+                          // style: const TextStyle(color: Colors.white),
+                          // softWrap: true, // Cho phép xuống dòng tự động
+                          // overflow:
+                          //     TextOverflow.visible, // Đảm bảo không cắt nội dung
+                          ),
                     ),
                     if (isUserQuery)
-                      const Padding(
-                        padding: EdgeInsets.only(
-                            right:
-                                10.0), // Add right margin to avoid it being too close to the edge
-                        child: CircleAvatar(
-                          backgroundImage: AssetImage('assets/profile.jpg'),
-                        ),
+                      const CircleAvatar(
+                        backgroundImage: AssetImage('assets/profile.jpg'),
                       ),
                   ],
                 );
@@ -263,12 +284,7 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
                   child: TextField(
                     controller: _controller,
                     decoration: InputDecoration(
-                      hintText: 'Enter your message...',
-                      hintStyle: TextStyle(
-                        color: Colors.grey
-                            .withOpacity(1.0), // Chỉnh màu mờ cho hintText
-                        fontSize: 16, // Chỉnh kích thước chữ nếu cần
-                      ),
+                      hintText: 'Enter your query...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(50),
                         borderSide: BorderSide.none,
@@ -290,181 +306,3 @@ class _WebSocketScreenState extends State<WebSocketScreen> {
     );
   }
 }
-
-// import 'dart:convert';
-// import 'package:flutter/material.dart';
-// import 'package:web_socket_channel/web_socket_channel.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-
-// class WebSocketScreen extends StatefulWidget {
-//   @override
-//   _WebSocketScreenState createState() => _WebSocketScreenState();
-// }
-
-// class _WebSocketScreenState extends State<WebSocketScreen> {
-//   late WebSocketChannel _channel;
-//   final TextEditingController _controller = TextEditingController();
-//   List<String> _responses = [];
-//   bool _isConnected = false;
-//   late User _currentUser;
-//   Map<String, dynamic>? _userData;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _connectWebSocket();
-//     _getCurrentUser();
-//   }
-
-//   void _getCurrentUser() async {
-//     final User? user = FirebaseAuth.instance.currentUser;
-//     if (user != null) {
-//       setState(() {
-//         _currentUser = user;
-//       });
-//       await _fetchUserData();
-//     }
-//   }
-
-//   Future<void> _fetchUserData() async {
-//     final firestore = FirebaseFirestore.instance;
-//     final userDoc =
-//         await firestore.collection('User').doc(_currentUser.uid).get();
-
-//     if (userDoc.exists) {
-//       setState(() {
-//         _userData = userDoc.data();
-//       });
-//     }
-//   }
-
-//   Future<String> _getCurrentUserName() async {
-//     if (_userData != null) {
-//       return _userData!['Name'] ?? 'Unknown User';
-//     }
-//     return 'Unknown User';
-//   }
-
-//   void _connectWebSocket() {
-//     final uri = Uri.parse("ws://26.223.117.204:8000/ws/query");
-//     print("Connecting to websocket at: $uri");
-//     try {
-//       _channel = WebSocketChannel.connect(uri);
-
-//       _channel.stream.listen((response) {
-//         setState(() {
-//           _responses.add(response);
-//         });
-//         if (response == "END") {
-//           _channel.sink.close();
-//         }
-//       }, onError: (error) {
-//         setState(() {
-//           _responses.add("Error: $error");
-//         });
-//       }, onDone: () {
-//         setState(() {
-//           _responses.add("Connection closed.");
-//         });
-//       });
-
-//       setState(() {
-//         _isConnected = true;
-//       });
-//     } catch (e) {
-//       setState(() {
-//         _responses.add("Connection error: $e");
-//         _isConnected = false;
-//       });
-//     }
-//   }
-
-//   void _sendRequest() async {
-//     if (_currentUser != null && _userData != null) {
-//       final requestData = {
-//         "query": _controller.text,
-//         "metadata": {
-//           "timestamp": DateTime.now().toString(),
-//           "user": {
-//             "id": _currentUser.uid,
-//             "name": _userData!['Name'],
-//             "email": _userData!['Email'],
-//             "gender": _userData!['Gender']
-//           }
-//         }
-//       };
-
-//       await FirebaseFirestore.instance.collection('requests').add({
-//         "query": _controller.text,
-//         "timestamp": DateTime.now().toString(),
-//         "user": {
-//           "id": _currentUser.uid,
-//           "name": _userData!['Name'],
-//           "email": _userData!['Email'],
-//           "gender": _userData!['Gender']
-//         },
-//       });
-//       _channel.sink.add(jsonEncode(requestData));
-//       setState(() {
-//         _responses.add("Sent: ${jsonEncode(requestData)}");
-//       });
-//     }
-//   }
-
-//   @override
-//   void dispose() {
-//     _channel.sink.close();
-//     _controller.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('WebSocket Example'),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           children: <Widget>[
-//             FutureBuilder<String>(
-//               future: _getCurrentUserName(),
-//               builder: (context, snapshot) {
-//                 if (snapshot.connectionState == ConnectionState.waiting) {
-//                   return CircularProgressIndicator();
-//                 } else if (snapshot.hasError) {
-//                   return Text('Error: ${snapshot.error}');
-//                 } else {
-//                   return Text('Welcome, ${snapshot.data}');
-//                 }
-//               },
-//             ),
-//             SizedBox(height: 10),
-//             TextField(
-//               controller: _controller,
-//               decoration: InputDecoration(labelText: 'Enter Query'),
-//             ),
-//             SizedBox(height: 10),
-//             ElevatedButton(
-//               onPressed: _isConnected ? _sendRequest : null,
-//               child: Text('Send Request'),
-//             ),
-//             SizedBox(height: 20),
-//             Text('Response from server:'),
-//             SizedBox(height: 10),
-//             Expanded(
-//               child: ListView.builder(
-//                 itemCount: _responses.length,
-//                 itemBuilder: (context, index) {
-//                   return Text(_responses[index]);
-//                 },
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
