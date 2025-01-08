@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AccountSettingPage extends StatefulWidget {
   const AccountSettingPage({super.key});
@@ -35,6 +39,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   };
 
   bool _isLoading = true;
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -68,6 +73,55 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     }
   }
 
+  Future _pickImageFromGallery() async {
+    final returnImage =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (returnImage != null) {
+      setState(() {
+        _selectedImage = File(returnImage.path);
+      });
+
+      // Convert the image to Base64 and save it
+      await _uploadImageAsBase64(_selectedImage!);
+    }
+  }
+
+  Future<void> _uploadImageAsBase64(File imageFile) async {
+    try {
+      // Read the image file as bytes
+      List<int> imageBytes = await imageFile.readAsBytes();
+
+      // Convert the bytes to a Base64 string
+      String base64Image = base64Encode(imageBytes);
+
+      // Save the Base64 string to Firestore
+      await _saveAvatarToFirestore(base64Image);
+    } catch (e) {
+      print("Error converting image to Base64: $e");
+    }
+  }
+
+  Future<void> _saveAvatarToFirestore(String base64Image) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
+
+      await FirebaseFirestore.instance
+          .collection('User')
+          .doc(currentUser.uid)
+          .update({
+        'avatar': base64Image,
+        'avatarUpdatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error saving avatar: $e');
+      rethrow; // Allow caller to handle error
+    }
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -95,13 +149,26 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 width: 2,
               ),
             ),
-            child: const Icon(
-              Icons.person_outline,
-              size: 50,
-              color: Colors.blue,
-            ),
+            child: userData['avatar'] != null && userData['avatar'].isNotEmpty
+                ? ClipOval(
+                    child: Image.memory(
+                      base64Decode(userData['avatar']),
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Icon(
+                    Icons.person_outline,
+                    size: 50,
+                    color: Colors.blue,
+                  ),
           ),
           const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _pickImageFromGallery,
+            child: const Text("Thay đổi Avatar"),
+          ),
           Text(
             userData['Name']?.toString() ??
                 AppLocalizations.of(context)!.no_data,
