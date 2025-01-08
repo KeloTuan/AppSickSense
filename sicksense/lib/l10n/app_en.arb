@@ -1,6 +1,10 @@
 {
     "chatWithAI": "Chat with AI",
+    "findDoctor": "Find a Doctor",
+    "availableDoctor": "Available Doctors",
+    "noAvailableDoctor": "There is no available doctor to chat right now",
     "warning": "Warning",
+    "noDoctorsFound": "No doctors found",
     "newConversationPrompt": "Do you want to create a new conversation?",
     "cancel": "Cancel",
     "confirm": "Confirm",

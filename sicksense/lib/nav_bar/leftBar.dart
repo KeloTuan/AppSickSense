@@ -5,6 +5,7 @@ import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sick_sense_mobile/ask_disease/websocket_screen.dart';
 import 'package:sick_sense_mobile/stripe_service.dart';
+import 'package:sick_sense_mobile/doctor_list.dart';
 
 class LeftBar extends StatefulWidget {
   const LeftBar({super.key});
@@ -76,6 +77,70 @@ class _LeftBarState extends State<LeftBar> {
         );
       }
     }
+  }
+
+  Widget _buildUserList(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId == null) {
+      return const Center(child: Text("User not authenticated."));
+    }
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('Users').doc(userId).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Center(child: Text("No data found."));
+        }
+
+        final userData = snapshot.data!.data() as Map<String, dynamic>?;
+        final textedUsers = (userData?['TextedUsers'] as List<dynamic>?)
+                ?.map((entry) => entry['UserId'] as String)
+                .toList() ??
+            [];
+
+        if (textedUsers.isEmpty) {
+          return const Center(child: Text("You haven't texted anyone yet."));
+        }
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('Users').snapshots(),
+          builder: (context, userSnapshot) {
+            if (userSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!userSnapshot.hasData) {
+              return const Center(child: Text("No users found."));
+            }
+
+            final allUsers = userSnapshot.data!.docs;
+
+            // Filter users based on the TextedUsers list
+            final filteredUsers = allUsers.where((doc) {
+              final userId = doc.id;
+              return textedUsers.contains(userId);
+            }).toList();
+
+            if (filteredUsers.isEmpty) {
+              return const Center(child: Text("No matching users found."));
+            }
+
+            return ListView.builder(
+              itemCount: filteredUsers.length,
+              itemBuilder: (context, index) {
+                final userDoc = filteredUsers[index];
+                return _buildUserListItem(context, userDoc);
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildUserListItem(BuildContext context, DocumentSnapshot doc) {
@@ -214,44 +279,108 @@ class _LeftBarState extends State<LeftBar> {
           ),
         ),
         children: [
-          StreamBuilder<bool>(
-            stream: _getPaymentStatus(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
+          if (!isDoctor)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DoctorsListPage(),
+                  ),
+                ),
+                icon: const Icon(Icons.search),
+                label: Text(localizations.findDoctor),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
+            ),
+          FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('User')
+                .doc(FirebaseAuth.instance.currentUser!.uid)
+                .get(),
+            builder: (context, userSnapshot) {
+              if (userSnapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Center(
                     child: CircularProgressIndicator(),
                   ),
                 );
               }
 
-              if (snapshot.data == false) {
-                return _buildPaymentPrompt(context, localizations);
+              if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+                return Center(
+                  child: Text(localizations.noUsersFound),
+                );
+              }
+
+              final userData =
+                  userSnapshot.data!.data() as Map<String, dynamic>?;
+              final isDoctor = userData?['IsDoctor'] ?? false;
+
+              final textedUsers =
+                  (userData?[isDoctor ? 'TextedUsers' : 'TextedDoctors']
+                              as List<dynamic>?)
+                          ?.map((entry) => entry['UserId'] as String)
+                          .toList() ??
+                      [];
+
+              if (textedUsers.isEmpty) {
+                return Center(
+                  child: Text(isDoctor
+                      ? localizations.noUsersFound
+                      : localizations.noDoctorsFound),
+                );
               }
 
               return StreamBuilder<QuerySnapshot>(
-                stream: _getDoctorsList(isDoctor),
+                stream:
+                    FirebaseFirestore.instance.collection('User').snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(20.0),
+                    return const Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Center(
                         child: CircularProgressIndicator(),
                       ),
                     );
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return _buildEmptyListMessage(localizations);
+                  if (!snapshot.hasData) {
+                    return Center(
+                      child: Text(isDoctor
+                          ? localizations.noUsersFound
+                          : localizations.noDoctorsFound),
+                    );
                   }
 
-                  return ListView(
+                  final allUsers = snapshot.data!.docs;
+
+                  // Filter users based on TextedDoctors or TextedUsers
+                  final filteredUsers = allUsers.where((doc) {
+                    return textedUsers.contains(doc.id);
+                  }).toList();
+
+                  if (filteredUsers.isEmpty) {
+                    return Center(
+                      child: Text(isDoctor
+                          ? localizations.noUsersFound
+                          : localizations.noDoctorsFound),
+                    );
+                  }
+
+                  return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    children: snapshot.data!.docs
-                        .map((doc) => _buildUserListItem(context, doc))
-                        .toList(),
+                    itemCount: filteredUsers.length,
+                    itemBuilder: (context, index) {
+                      final userDoc = filteredUsers[index];
+                      return _buildUserListItem(context, userDoc);
+                    },
                   );
                 },
               );

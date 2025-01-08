@@ -319,7 +319,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            Get.to(() => SignUpScreen());
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => SignUpScreen()),
+                            );
                           },
                           child: Text(
                             "Đăng ký ngay",

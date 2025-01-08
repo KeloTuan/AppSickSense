@@ -18,7 +18,6 @@ class Chat extends StatefulWidget {
 
 class _ChatState extends State<Chat> {
   final TextEditingController _controller = TextEditingController();
-  late String conversationId;
   late ChatService chatService;
   bool? isDoctor;
 
@@ -26,7 +25,6 @@ class _ChatState extends State<Chat> {
   void initState() {
     super.initState();
     chatService = ChatService();
-    conversationId = chatService.generateConversationId(widget.friendId);
     _checkIfDoctor();
   }
 
@@ -45,10 +43,16 @@ class _ChatState extends State<Chat> {
     }
   }
 
-  void _sendMessage(String message) async {
-    if (message.isNotEmpty) {
-      await chatService.sendMessage(conversationId, message, widget.friendId);
+  /// Sends the message via ChatService
+  void _sendMessage(String conversationId, String message) async {
+    try {
+      await chatService.sendMessage(
+        friendId: widget.friendId,
+        message: message,
+      );
       _controller.clear();
+    } catch (e) {
+      print("Error sending message: $e");
     }
   }
 
@@ -109,12 +113,14 @@ class _ChatState extends State<Chat> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final conversationId = chatService.generateConversationId(widget.friendId);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(context, localizations) as PreferredSizeWidget,
       body: Column(
         children: [
+          // Messages List
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: chatService.getMessages(conversationId),
@@ -133,8 +139,9 @@ class _ChatState extends State<Chat> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     var message = messages[index];
-                    bool isSender = message['sender'] ==
+                    bool isSender = message['SenderId'] ==
                         FirebaseAuth.instance.currentUser!.uid;
+
                     return Row(
                       mainAxisAlignment: isSender
                           ? MainAxisAlignment.end
@@ -155,7 +162,7 @@ class _ChatState extends State<Chat> {
                             color: isSender ? Colors.blue : Colors.grey,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(message['message'],
+                          child: Text(message['Message'] ?? '',
                               style: const TextStyle(color: Colors.white)),
                         ),
                         if (isSender)
@@ -172,6 +179,8 @@ class _ChatState extends State<Chat> {
               },
             ),
           ),
+
+          // Message Input
           Container(
             margin: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
@@ -201,7 +210,7 @@ class _ChatState extends State<Chat> {
                 IconButton(
                   onPressed: () {
                     if (_controller.text.isNotEmpty) {
-                      _sendMessage(_controller.text);
+                      _sendMessage(conversationId, _controller.text);
                     }
                   },
                   icon: const Icon(Icons.arrow_circle_up),
