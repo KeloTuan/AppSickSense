@@ -5,69 +5,116 @@ class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Tạo ID cuộc trò chuyện duy nhất giữa hai người dùng
+  // Generate a unique conversation ID based on user IDs
   String generateConversationId(String friendId) {
-    return _auth.currentUser!.uid.compareTo(friendId) < 0
-        ? '${_auth.currentUser!.uid}_${friendId}'
-        : '${friendId}_${_auth.currentUser!.uid}';
+    final currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) throw Exception("User not authenticated");
+
+    return currentUserId.compareTo(friendId) < 0
+        ? '${currentUserId}_$friendId'
+        : '${friendId}_$currentUserId';
   }
 
-  // Gửi tin nhắn đến Firestore
-  Future<void> sendMessage(
-      String conversationId, String message, String receiverId) async {
+  // Send a message
+  Future<void> sendMessage({
+    required String friendId,
+    required String message,
+  }) async {
     try {
-      final userId = _auth.currentUser!.uid;
+      final currentUserId = _auth.currentUser?.uid;
+      if (currentUserId == null) throw Exception("User not authenticated");
 
-      // Thêm tin nhắn vào Firestore
+      // Generate the conversation ID
+      final conversationId = generateConversationId(friendId);
+
+      // Add the message to the Chats collection
       await _firestore
-          .collection('chats')
+          .collection('Chats')
           .doc(conversationId)
-          .collection('messages')
+          .collection('Messages')
           .add({
-        'sender': userId,
-        'receiver': receiverId,
-        'message': message,
-        'timestamp': FieldValue.serverTimestamp(),
+        'SenderId': currentUserId,
+        'Message': message,
+        'Timestamp': FieldValue.serverTimestamp(),
       });
+
+      // Update the last message for both users
+      await _updateTextedUsers(currentUserId, friendId, message);
     } catch (e) {
-      print("Lỗi khi gửi tin nhắn: $e");
+      print("Error sending message: $e");
       rethrow;
     }
   }
 
-  // Lấy danh sách tin nhắn từ Firestore
+  // Get a stream of messages for a conversation
   Stream<List<Map<String, dynamic>>> getMessages(String conversationId) {
     return _firestore
-        .collection('chats')
+        .collection('Chats')
         .doc(conversationId)
-        .collection('messages')
-        .orderBy('timestamp')
+        .collection('Messages')
+        .orderBy('Timestamp', descending: false)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return doc.data() as Map<String, dynamic>;
-      }).toList();
+      return snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
     });
   }
 
-  // Lấy danh sách bạn bè của người dùng
-  Future<List<Map<String, dynamic>>> getFriendsList() async {
+  // Fetch the list of texted users for the current user
+  Future<List<Map<String, dynamic>>> getTextedUsers() async {
     try {
-      final userId = _auth.currentUser!.uid;
+      final currentUserId = _auth.currentUser?.uid;
+      if (currentUserId == null) throw Exception("User not authenticated");
 
-      // Lấy danh sách bạn bè từ Firestore
-      final querySnapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('friends')
-          .get();
+      final userDoc =
+          await _firestore.collection('Users').doc(currentUserId).get();
 
-      return querySnapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .toList();
+      if (!userDoc.exists || userDoc.data() == null) return [];
+      final data = userDoc.data() as Map<String, dynamic>;
+
+      return List<Map<String, dynamic>>.from(data['TextedUsers'] ?? []);
     } catch (e) {
-      print("Lỗi khi lấy danh sách bạn bè: $e");
+      print("Error fetching texted users: $e");
       return [];
+    }
+  }
+
+  // Private helper method to update TextedUsers and TextedDoctors
+  Future<void> _updateTextedUsers(
+      String currentUserId, String friendId, String message) async {
+    try {
+      final timestamp = FieldValue.serverTimestamp();
+
+      // Update current user's TextedUsers
+      await _firestore.collection('Users').doc(currentUserId).set({
+        'TextedUsers': FieldValue.arrayUnion([
+          {
+            'UserId': friendId,
+            'LastMessage': message,
+            'Timestamp': timestamp,
+          }
+        ])
+      }, SetOptions(merge: true));
+
+      // Update friend's TextedDoctors (or TextedUsers, depending on their role)
+      final friendDoc =
+          await _firestore.collection('Users').doc(friendId).get();
+      final isDoctor = friendDoc.data()?['IsDoctor'] ?? false;
+
+      final fieldToUpdate = isDoctor ? 'TextedDoctors' : 'TextedUsers';
+      await _firestore.collection('Users').doc(friendId).set({
+        fieldToUpdate: FieldValue.arrayUnion([
+          {
+            'UserId': currentUserId,
+            'LastMessage': message,
+            'Timestamp': timestamp,
+          }
+        ])
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print("Error updating texted users/doctors: $e");
+      rethrow;
     }
   }
 }

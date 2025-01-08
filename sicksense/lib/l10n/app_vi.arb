@@ -1,6 +1,10 @@
 {
     "chatWithAI": "Chat với AI",
+    "findDoctor": "Tìm bác sĩ",
+    "availableDoctor": "Danh sách bác sĩ",
+    "noAvailableDoctor": "Hiện tại không có bác sĩ nào có thể chat được",
     "warning": "Cảnh báo",
+    "noDoctorsFound": "Không tìm thấy bác sĩ nào",
     "newConversationPrompt": "Bạn muốn tạo cuộc trò chuyện mới?",
     "cancel": "Hủy",
     "confirm": "Đồng ý",
