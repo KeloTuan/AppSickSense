@@ -6,6 +6,7 @@ import 'package:sick_sense_mobile/nav_bar/rightbar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sick_sense_mobile/pages/chat_service.dart';
 import 'package:sick_sense_mobile/summarize/summarize_websocket_screen.dart';
+import 'package:sick_sense_mobile/setting/base64_image.dart';
 
 class Chat extends StatefulWidget {
   final String friendId;
@@ -20,27 +21,100 @@ class _ChatState extends State<Chat> {
   final TextEditingController _controller = TextEditingController();
   late ChatService chatService;
   bool? isDoctor;
+  final Map<String, ImageProvider?> _userAvatars = {};
 
   @override
   void initState() {
     super.initState();
     chatService = ChatService();
-    _checkIfDoctor();
+    _initializeChat();
+  }
+
+  Future<void> _initializeChat() async {
+    await _checkIfDoctor();
+    await _loadAvatars();
   }
 
   Future<void> _checkIfDoctor() async {
-    final firestore = FirebaseFirestore.instance;
-    final currentUser = FirebaseAuth.instance.currentUser;
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
 
-    if (currentUser != null) {
-      final userDoc =
-          await firestore.collection('User').doc(currentUser.uid).get();
-      if (userDoc.exists) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('User')
+          .doc(currentUser.uid)
+          .get();
+
+      if (mounted) {
         setState(() {
           isDoctor = userDoc.data()?['IsDoctor'] ?? false;
         });
       }
+    } catch (e) {
+      debugPrint('Error checking doctor status: $e');
     }
+  }
+
+  Future<void> _loadAvatars() async {
+    try {
+      // Load current user's avatar
+      if (FirebaseAuth.instance.currentUser != null) {
+        await _loadUserAvatar(FirebaseAuth.instance.currentUser!.uid);
+      }
+      // Load friend's avatar
+      await _loadUserAvatar(widget.friendId);
+    } catch (e) {
+      debugPrint('Error loading avatars: $e');
+    }
+  }
+
+  Future<void> _loadUserAvatar(String userId) async {
+    try {
+      final userDoc =
+          await FirebaseFirestore.instance.collection('User').doc(userId).get();
+
+      if (!userDoc.exists) {
+        debugPrint('No user document found for ID: $userId');
+        return;
+      }
+
+      final userData = userDoc.data();
+      final avatarBase64 = userData?['avatar'] as String?;
+
+      if (mounted && avatarBase64 != null && avatarBase64.isNotEmpty) {
+        setState(() {
+          try {
+            final decodedImage =
+                Base64ImageService().decodeBase64Image(avatarBase64);
+            _userAvatars[userId] = MemoryImage(decodedImage);
+            debugPrint('Successfully loaded avatar for user: $userId');
+          } catch (e) {
+            debugPrint('Error decoding avatar for user $userId: $e');
+            _userAvatars[userId] = const AssetImage('assets/profile.jpg');
+          }
+        });
+      } else {
+        debugPrint('No avatar found for user: $userId, using default');
+        if (mounted) {
+          setState(() {
+            _userAvatars[userId] = const AssetImage('assets/profile.jpg');
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading avatar for user $userId: $e');
+      if (mounted) {
+        setState(() {
+          _userAvatars[userId] = const AssetImage('assets/profile.jpg');
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   /// Sends the message via ChatService
@@ -122,25 +196,41 @@ class _ChatState extends State<Chat> {
         children: [
           // Messages List
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: chatService.getMessages(conversationId),
+            child: StreamBuilder<DocumentSnapshot>(
+              // Changed to DocumentSnapshot
+              stream: FirebaseFirestore.instance
+                  .collection('Chats')
+                  .doc(conversationId)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (snapshot.data == null || snapshot.data!.isEmpty) {
+                if (!snapshot.hasData || !snapshot.data!.exists) {
                   return Center(child: Text(localizations.noMessageYet));
                 }
 
-                final messages = snapshot.data!;
+                final chatData = snapshot.data!.data() as Map<String, dynamic>;
+                final messages = (chatData['Messages'] as List<dynamic>? ?? [])
+                    .map((msg) => msg as Map<String, dynamic>)
+                    .toList();
+
+                messages.sort((a, b) => (a['Timestamp'] as int)
+                    .compareTo(b['Timestamp'] as int)); // Sort by timestamp
 
                 return ListView.builder(
                   itemCount: messages.length,
+                  reverse: true, // Show latest messages at the bottom
                   itemBuilder: (context, index) {
-                    var message = messages[index];
-                    bool isSender = message['SenderId'] ==
+                    final message = messages[messages.length -
+                        1 -
+                        index]; // Reverse index for proper ordering
+                    final isSender = message['SenderId'] ==
                         FirebaseAuth.instance.currentUser!.uid;
+                    final senderId = message['SenderId'] as String;
+                    final avatarImage = _userAvatars[senderId] ??
+                        const AssetImage('assets/profile.jpg');
 
                     return Row(
                       mainAxisAlignment: isSender
@@ -148,28 +238,42 @@ class _ChatState extends State<Chat> {
                           : MainAxisAlignment.start,
                       children: [
                         if (!isSender)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 10.0),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 10.0),
                             child: CircleAvatar(
-                              backgroundImage: AssetImage('assets/profile.jpg'),
+                              backgroundColor: Colors.grey[300],
+                              backgroundImage: avatarImage,
+                              child: avatarImage is AssetImage
+                                  ? Icon(Icons.person, color: Colors.grey[600])
+                                  : null,
                             ),
                           ),
-                        Container(
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 5, horizontal: 10),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isSender ? Colors.blue : Colors.grey,
-                            borderRadius: BorderRadius.circular(10),
+                        Flexible(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 5, horizontal: 10),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isSender ? Colors.blue : Colors.grey[300],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              message['Message'] ?? '',
+                              style: TextStyle(
+                                color: isSender ? Colors.white : Colors.black,
+                              ),
+                            ),
                           ),
-                          child: Text(message['Message'] ?? '',
-                              style: const TextStyle(color: Colors.white)),
                         ),
                         if (isSender)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 10.0),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 10.0),
                             child: CircleAvatar(
-                              backgroundImage: AssetImage('assets/profile.jpg'),
+                              backgroundColor: Colors.grey[300],
+                              backgroundImage: avatarImage,
+                              child: avatarImage is AssetImage
+                                  ? Icon(Icons.person, color: Colors.grey[600])
+                                  : null,
                             ),
                           ),
                       ],

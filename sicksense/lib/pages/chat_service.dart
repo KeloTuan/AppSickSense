@@ -15,33 +15,69 @@ class ChatService {
         : '${friendId}_$currentUserId';
   }
 
-  // Send a message
+  /// Get messages for a specific conversation
+  Future<List<Map<String, dynamic>>> getConversationMessages(
+      String friendId) async {
+    final conversationId = generateConversationId(friendId);
+
+    final querySnapshot = await _firestore
+        .collection('Chats')
+        .doc(conversationId)
+        .collection('Messages')
+        .orderBy('timestamp')
+        .get();
+
+    return querySnapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+  }
+
   Future<void> sendMessage({
     required String friendId,
     required String message,
   }) async {
+    if (message.trim().isEmpty) return;
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    final conversationId = generateConversationId(friendId);
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    final chatRef =
+        FirebaseFirestore.instance.collection('Chats').doc(conversationId);
+
     try {
-      final currentUserId = _auth.currentUser?.uid;
-      if (currentUserId == null) throw Exception("User not authenticated");
+      // Try to get existing chat
+      final chatDoc = await chatRef.get();
 
-      // Generate the conversation ID
-      final conversationId = generateConversationId(friendId);
-
-      // Add the message to the Chats collection
-      await _firestore
-          .collection('Chats')
-          .doc(conversationId)
-          .collection('Messages')
-          .add({
-        'SenderId': currentUserId,
-        'Message': message,
-        'Timestamp': FieldValue.serverTimestamp(),
-      });
-
-      // Update the last message for both users
-      await _updateTextedUsers(currentUserId, friendId, message);
+      if (!chatDoc.exists) {
+        // Create new chat if it doesn't exist
+        await chatRef.set({
+          'ChatId': conversationId,
+          'Participants': [currentUser.uid, friendId],
+          'Messages': [
+            {
+              'SenderId': currentUser.uid,
+              'Message': message.trim(),
+              'Timestamp': timestamp,
+            }
+          ]
+        });
+      } else {
+        // Add message to existing chat
+        await chatRef.update({
+          'Messages': FieldValue.arrayUnion([
+            {
+              'SenderId': currentUser.uid,
+              'Message': message.trim(),
+              'Timestamp': timestamp,
+            }
+          ])
+        });
+      }
     } catch (e) {
-      print("Error sending message: $e");
+      print('Error sending message: $e');
       rethrow;
     }
   }
@@ -55,9 +91,14 @@ class ChatService {
         .orderBy('Timestamp', descending: false)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'SenderId': data['SenderId'],
+          'Message': data['Message'],
+          'Timestamp': (data['Timestamp'] as Timestamp).seconds,
+        };
+      }).toList();
     });
   }
 
@@ -80,12 +121,10 @@ class ChatService {
     }
   }
 
-  // Private helper method to update TextedUsers and TextedDoctors
-  Future<void> _updateTextedUsers(
-      String currentUserId, String friendId, String message) async {
+  // Private helper method to update TextedUsers
+  Future<void> _updateTextedUsers(String currentUserId, String friendId,
+      String message, int timestamp) async {
     try {
-      final timestamp = FieldValue.serverTimestamp();
-
       // Update current user's TextedUsers
       await _firestore.collection('Users').doc(currentUserId).set({
         'TextedUsers': FieldValue.arrayUnion([
@@ -97,14 +136,9 @@ class ChatService {
         ])
       }, SetOptions(merge: true));
 
-      // Update friend's TextedDoctors (or TextedUsers, depending on their role)
-      final friendDoc =
-          await _firestore.collection('Users').doc(friendId).get();
-      final isDoctor = friendDoc.data()?['IsDoctor'] ?? false;
-
-      final fieldToUpdate = isDoctor ? 'TextedDoctors' : 'TextedUsers';
+      // Update friend's TextedUsers
       await _firestore.collection('Users').doc(friendId).set({
-        fieldToUpdate: FieldValue.arrayUnion([
+        'TextedUsers': FieldValue.arrayUnion([
           {
             'UserId': currentUserId,
             'LastMessage': message,
@@ -113,7 +147,7 @@ class ChatService {
         ])
       }, SetOptions(merge: true));
     } catch (e) {
-      print("Error updating texted users/doctors: $e");
+      print("Error updating texted users: $e");
       rethrow;
     }
   }

@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sick_sense_mobile/auth/login/login_screen.dart';
 import 'package:sick_sense_mobile/map/screen/maps_screen.dart';
-import 'package:sick_sense_mobile/pages/chat.dart';
+import 'package:sick_sense_mobile/setting/base64_image.dart';
 import 'package:sick_sense_mobile/setting/accountSettingPage.dart';
 import 'package:sick_sense_mobile/setting/setting.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -82,19 +82,70 @@ class RightBar extends StatelessWidget {
                           },
                           child: Row(
                             children: [
-                              CircleAvatar(
-                                radius: 30,
-                                backgroundColor:
-                                    theme.colorScheme.primary.withOpacity(0.1),
-                                child: Text(
-                                  user?.email?.substring(0, 1).toUpperCase() ??
-                                      'U',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
+                              FutureBuilder<DocumentSnapshot>(
+                                future: FirebaseFirestore.instance
+                                    .collection('User')
+                                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                                    .get(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return CircleAvatar(
+                                      radius: 30,
+                                      backgroundColor: theme.colorScheme.primary
+                                          .withOpacity(0.1),
+                                      child: const CircularProgressIndicator(),
+                                    );
+                                  }
+
+                                  if (!snapshot.hasData ||
+                                      !snapshot.data!.exists) {
+                                    return CircleAvatar(
+                                      radius: 30,
+                                      backgroundColor: theme.colorScheme.primary
+                                          .withOpacity(0.1),
+                                      child: Text(
+                                        user?.email
+                                                ?.substring(0, 1)
+                                                .toUpperCase() ??
+                                            'U',
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  final userData = snapshot.data!.data()
+                                      as Map<String, dynamic>;
+                                  final avatarBase64 =
+                                      userData['avatar'] as String?;
+
+                                  return CircleAvatar(
+                                    radius: 30,
+                                    backgroundColor: theme.colorScheme.primary
+                                        .withOpacity(0.1),
+                                    backgroundImage: avatarBase64 != null
+                                        ? MemoryImage(Base64ImageService()
+                                            .decodeBase64Image(avatarBase64))
+                                        : null,
+                                    child: avatarBase64 == null
+                                        ? Text(
+                                            user?.email
+                                                    ?.substring(0, 1)
+                                                    .toUpperCase() ??
+                                                'U',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          )
+                                        : null,
+                                  );
+                                },
                               ),
                               const SizedBox(width: 16),
                               Expanded(

@@ -297,60 +297,55 @@ class _LeftBarState extends State<LeftBar> {
                 ),
               ),
             ),
-          FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance
-                .collection('User')
-                .doc(FirebaseAuth.instance.currentUser!.uid)
-                .get(),
-            builder: (context, userSnapshot) {
-              if (userSnapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Center(
+          StreamBuilder<bool>(
+            stream: _getPaymentStatus(),
+            builder: (context, paymentSnapshot) {
+              if (paymentSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
                     child: CircularProgressIndicator(),
                   ),
                 );
               }
 
-              if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                return Center(
-                  child: Text(localizations.noUsersFound),
-                );
+              if (paymentSnapshot.data == false) {
+                return _buildPaymentPrompt(context, localizations);
               }
 
-              final userData =
-                  userSnapshot.data!.data() as Map<String, dynamic>?;
-              final isDoctor = userData?['IsDoctor'] ?? false;
-
-              final textedUsers =
-                  (userData?[isDoctor ? 'TextedUsers' : 'TextedDoctors']
-                              as List<dynamic>?)
-                          ?.map((entry) => entry['UserId'] as String)
-                          .toList() ??
-                      [];
-
-              if (textedUsers.isEmpty) {
-                return Center(
-                  child: Text(isDoctor
-                      ? localizations.noUsersFound
-                      : localizations.noDoctorsFound),
-                );
-              }
-
-              return StreamBuilder<QuerySnapshot>(
-                stream:
-                    FirebaseFirestore.instance.collection('User').snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Center(
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('User')
+                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                    .get(),
+                builder: (context, userSnapshot) {
+                  if (userSnapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
                         child: CircularProgressIndicator(),
                       ),
                     );
                   }
 
-                  if (!snapshot.hasData) {
+                  if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+                    return Center(
+                      child: Text(localizations.noUsersFound),
+                    );
+                  }
+
+                  final userData =
+                      userSnapshot.data!.data() as Map<String, dynamic>?;
+                  final isDoctor = userData?['IsDoctor'] ?? false;
+
+                  final textedUsers =
+                      (userData?[isDoctor ? 'TextedUsers' : 'TextedDoctors']
+                                  as List<dynamic>?)
+                              ?.map((entry) => entry['UserId'] as String)
+                              .toList() ??
+                          [];
+
+                  if (textedUsers.isEmpty) {
                     return Center(
                       child: Text(isDoctor
                           ? localizations.noUsersFound
@@ -358,28 +353,52 @@ class _LeftBarState extends State<LeftBar> {
                     );
                   }
 
-                  final allUsers = snapshot.data!.docs;
+                  return StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('User')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(20.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
 
-                  // Filter users based on TextedDoctors or TextedUsers
-                  final filteredUsers = allUsers.where((doc) {
-                    return textedUsers.contains(doc.id);
-                  }).toList();
+                      if (!snapshot.hasData) {
+                        return Center(
+                          child: Text(isDoctor
+                              ? localizations.noUsersFound
+                              : localizations.noDoctorsFound),
+                        );
+                      }
 
-                  if (filteredUsers.isEmpty) {
-                    return Center(
-                      child: Text(isDoctor
-                          ? localizations.noUsersFound
-                          : localizations.noDoctorsFound),
-                    );
-                  }
+                      final allUsers = snapshot.data!.docs;
 
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filteredUsers.length,
-                    itemBuilder: (context, index) {
-                      final userDoc = filteredUsers[index];
-                      return _buildUserListItem(context, userDoc);
+                      // Filter users based on TextedDoctors or TextedUsers
+                      final filteredUsers = allUsers.where((doc) {
+                        return textedUsers.contains(doc.id);
+                      }).toList();
+
+                      if (filteredUsers.isEmpty) {
+                        return Center(
+                          child: Text(isDoctor
+                              ? localizations.noUsersFound
+                              : localizations.noDoctorsFound),
+                        );
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: filteredUsers.length,
+                        itemBuilder: (context, index) {
+                          final userDoc = filteredUsers[index];
+                          return _buildUserListItem(context, userDoc);
+                        },
+                      );
                     },
                   );
                 },

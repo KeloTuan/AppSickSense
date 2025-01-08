@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:typed_data';
+import 'package:sick_sense_mobile/setting/base64_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -73,32 +74,39 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     }
   }
 
-  Future _pickImageFromGallery() async {
-    final returnImage =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final pickedImage =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
 
-    if (returnImage != null) {
-      setState(() {
-        _selectedImage = File(returnImage.path);
-      });
+      if (pickedImage != null) {
+        // Read the image file as bytes
+        Uint8List imageBytes = await pickedImage.readAsBytes();
 
-      // Convert the image to Base64 and save it
-      await _uploadImageAsBase64(_selectedImage!);
+        // Convert the bytes to Base64 and save it
+        await _uploadImage(imageBytes);
+      }
+    } catch (e) {
+      print("Error picking image: $e");
     }
   }
 
-  Future<void> _uploadImageAsBase64(File imageFile) async {
+  Future<void> _uploadImage(Uint8List imageBytes) async {
+    final Base64ImageService imageService = Base64ImageService();
     try {
-      // Read the image file as bytes
-      List<int> imageBytes = await imageFile.readAsBytes();
+      // Convert image to Base64
+      String base64Image = imageService.encodeImageToBase64(imageBytes);
 
-      // Convert the bytes to a Base64 string
-      String base64Image = base64Encode(imageBytes);
-
-      // Save the Base64 string to Firestore
+      // Save Base64 string to Firestore
       await _saveAvatarToFirestore(base64Image);
+
+      // Optionally, upload the image to Firebase Storage and get the download URL
+      String fileName = "${FirebaseAuth.instance.currentUser?.uid}_avatar.jpg";
+      String downloadUrl = await imageService.uploadImage(imageBytes, fileName);
+
+      print("Image uploaded successfully. Download URL: $downloadUrl");
     } catch (e) {
-      print("Error converting image to Base64: $e");
+      print("Error uploading image: $e");
     }
   }
 
