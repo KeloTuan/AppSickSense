@@ -74,5 +74,7 @@
     "chatWithPatients": "Trò chuyện cùng bệnh nhân",
     "chatWithDoctors": "Trò chuyện cùng bác sĩ",
     "noUsersFound": "Không tìm thấy người dùng nào",
-    "unknownUser": "Người dùng không xác định"
+    "unknownUser": "Người dùng không xác định",
+    "paymentRequired": "Bạn cần phải thanh toán để truy cập tính năng này.",
+    "goToPayment": "Đi đến thanh toán"
 }

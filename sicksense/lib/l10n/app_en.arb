@@ -71,10 +71,10 @@
     "chatWithDoctor": "Chat with doctor",
     "noMessageYet": "No messages yet.",
     "goToChatWithAI": "Go to chat with AI",
-    "chatWithAI": "Chat with AI",
     "chatWithPatients": "Chat with Patients",
     "chatWithDoctors": "Chat with Doctors",
-    "goToChatWithAI": "Go to Chat with AI",
     "noUsersFound": "No users found",
-    "unknownUser": "Unknown User"
+    "unknownUser": "Unknown User",
+    "paymentRequired": "You need to pay to access this feature.",
+    "goToPayment": "Go to payment"
 }

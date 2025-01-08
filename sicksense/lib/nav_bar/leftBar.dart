@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sick_sense_mobile/pages/chat.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sick_sense_mobile/ask_disease/websocket_screen.dart';
+import 'package:sick_sense_mobile/stripe_service.dart';
 
 class LeftBar extends StatelessWidget {
   const LeftBar({super.key});
@@ -51,6 +52,31 @@ class LeftBar extends StatelessWidget {
       }
     }
     return 'Unknown User';
+  }
+
+  Future<bool> _checkPaymentStatus() async {
+    final firestore = FirebaseFirestore.instance;
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      final userDoc =
+          await firestore.collection('User').doc(currentUser.uid).get();
+      if (userDoc.exists) {
+        return userDoc.data()?['HasPaid'] ?? false;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _savePaymentStatus() async {
+    final firestore = FirebaseFirestore.instance;
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      await firestore.collection('User').doc(currentUser.uid).update({
+        'HasPaid': true,
+      });
+    }
   }
 
   Widget _buildUserListItem(BuildContext context, DocumentSnapshot doc) {
@@ -104,13 +130,14 @@ class LeftBar extends StatelessWidget {
         title: Text(
           title,
           style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: fontSize,
-              color: Colors.black),
+            fontWeight: FontWeight.bold,
+            fontSize: fontSize,
+            color: Colors.black,
+          ),
         ),
         children: [
-          FutureBuilder<QuerySnapshot>(
-            future: futureList,
+          FutureBuilder<bool>(
+            future: _checkPaymentStatus(), // Kiểm tra trạng thái thanh toán
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
@@ -121,23 +148,67 @@ class LeftBar extends StatelessWidget {
                 );
               }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              if (snapshot.data == false) {
                 return Container(
-                  padding: const EdgeInsets.all(20),
-                  alignment: Alignment.center,
+                  padding: const EdgeInsets.all(24),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Icon cảnh báo
                       const Icon(
-                        Icons.person_off_outlined,
-                        size: 48,
-                        color: Colors.black,
+                        Icons.payment_outlined,
+                        size: 64,
+                        color: Colors.orange,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
+
+                      // Thông báo thanh toán
                       Text(
-                        localizations.noUsersFound,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 16,
+                        localizations.paymentRequired,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Nút thanh toán
+                      ElevatedButton(
+                        onPressed: () {
+                          StripeService.instance.makePayment().then((_) {
+                            _savePaymentStatus();
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.credit_card,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              localizations.goToPayment,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -145,12 +216,51 @@ class LeftBar extends StatelessWidget {
                 );
               }
 
-              return ListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: snapshot.data!.docs
-                    .map((doc) => _buildUserListItem(context, doc))
-                    .toList(),
+              // Nếu đã thanh toán, hiển thị danh sách
+              return FutureBuilder<QuerySnapshot>(
+                future: futureList,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      alignment: Alignment.center,
+                      child: Column(
+                        children: [
+                          const Icon(
+                            Icons.person_off_outlined,
+                            size: 48,
+                            color: Colors.black,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            localizations.noUsersFound,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: snapshot.data!.docs
+                        .map((doc) => _buildUserListItem(context, doc))
+                        .toList(),
+                  );
+                },
               );
             },
           ),
