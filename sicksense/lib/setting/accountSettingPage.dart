@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -76,9 +77,54 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     final returnImage =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
-    setState(() {
-      _selectedImage = File(returnImage!.path);
-    });
+    if (returnImage != null) {
+      setState(() {
+        _selectedImage = File(returnImage.path);
+      });
+
+      // Convert the image to Base64 and save it
+      await _uploadImageAsBase64(_selectedImage!);
+    }
+  }
+
+  Future<void> _uploadImageAsBase64(File imageFile) async {
+    try {
+      // Read the image file as bytes
+      List<int> imageBytes = await imageFile.readAsBytes();
+
+      // Convert the bytes to a Base64 string
+      String base64Image = base64Encode(imageBytes);
+
+      // Save the Base64 string to Firestore
+      await _saveAvatarToFirestore(base64Image);
+    } catch (e) {
+      print("Error converting image to Base64: $e");
+    }
+  }
+
+  Future<void> _saveAvatarToFirestore(String base64Image) async {
+    try {
+      // Assuming the current user is logged in and we have the user ID
+      String userId =
+          'jA8DzKeWpeR03QRhr70sEjNexHd2'; // Replace with your actual user ID or FirebaseAuth currentUser ID
+
+      // Create a new 'Avatar' document in the 'User' collection and save the Base64 image string
+      await FirebaseFirestore.instance
+          .collection('User')
+          .doc(userId)
+          .collection(
+              'Avatar') // Use 'Avatar' collection instead of nested 'avatar' collection
+          .doc(
+              'image') // You can leave this document name as 'image' or choose something else
+          .set({
+        'image': base64Image,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      print("Avatar saved successfully.");
+    } catch (e) {
+      print("Error saving avatar to Firestore: $e");
+    }
   }
 
   void _showSnackBar(String message) {
