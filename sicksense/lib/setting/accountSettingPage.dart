@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AccountSettingPage extends StatefulWidget {
   const AccountSettingPage({super.key});
@@ -35,6 +38,7 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
   };
 
   bool _isLoading = true;
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -68,6 +72,15 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
     }
   }
 
+  Future _pickImageFromGallery() async {
+    final returnImage =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    setState(() {
+      _selectedImage = File(returnImage!.path);
+    });
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -95,13 +108,26 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
                 width: 2,
               ),
             ),
-            child: const Icon(
-              Icons.person_outline,
-              size: 50,
-              color: Colors.blue,
-            ),
+            child: _selectedImage != null
+                ? ClipOval(
+                    child: Image.file(
+                      _selectedImage!,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Icon(
+                    Icons.person_outline,
+                    size: 50,
+                    color: Colors.blue,
+                  ),
           ),
           const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _pickImageFromGallery,
+            child: const Text("Thay đổi Avatar"),
+          ),
           Text(
             userData['Name']?.toString() ??
                 AppLocalizations.of(context)!.no_data,
