@@ -6,6 +6,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sick_sense_mobile/ask_disease/websocket_screen.dart';
 import 'package:sick_sense_mobile/stripe_service.dart';
 import 'package:sick_sense_mobile/doctor_list.dart';
+import 'package:sick_sense_mobile/setting/base64_image.dart';
 
 class LeftBar extends StatefulWidget {
   const LeftBar({super.key});
@@ -143,23 +144,47 @@ class _LeftBarState extends State<LeftBar> {
     );
   }
 
+  Future<DocumentSnapshot> _fetchCurrentUser() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      return FirebaseFirestore.instance
+          .collection('User') // Adjust the collection name if necessary
+          .doc(currentUser.uid)
+          .get();
+    } else {
+      throw Exception('User not logged in');
+    }
+  }
+
   Widget _buildUserListItem(BuildContext context, DocumentSnapshot doc) {
+    // Extract user data from the document
     final userData = doc.data() as Map<String, dynamic>;
     final userName = userData['Name'] as String? ?? 'Unknown User';
+    final avatarBase64 =
+        userData['avatar'] as String?; // Extract avatar in Base64 format
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
+          radius: 30,
           backgroundColor: Colors.blue.shade100,
-          child: Text(
-            userName.isNotEmpty ? userName[0].toUpperCase() : '?',
-            style: TextStyle(
-              color: Colors.blue.shade700,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          backgroundImage: (avatarBase64 != null && avatarBase64.isNotEmpty)
+              ? MemoryImage(
+                  Base64ImageService().decodeBase64Image(avatarBase64))
+              : null, // Load image if Base64 string is available
+          child: (avatarBase64 == null || avatarBase64.isEmpty)
+              ? Text(
+                  userName.isNotEmpty
+                      ? userName[0].toUpperCase()
+                      : '?', // Fallback to initials
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              : null,
         ),
         title: Text(
           userName,
@@ -525,12 +550,44 @@ class _LeftBarState extends State<LeftBar> {
                         const EdgeInsets.only(right: 16, top: 16, bottom: 16),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.blue.shade100,
-                          child: const Icon(
-                            Icons.person,
-                            color: Colors.blue,
-                          ),
+                        FutureBuilder<DocumentSnapshot>(
+                          future: _fetchCurrentUser(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return CircleAvatar(
+                                radius: 30,
+                                backgroundColor: Colors.blue.shade100,
+                                child: const CircularProgressIndicator(),
+                              );
+                            }
+
+                            if (snapshot.hasError) {
+                              return CircleAvatar(
+                                radius: 30,
+                                backgroundColor: Colors.red.shade100,
+                                child:
+                                    const Icon(Icons.error, color: Colors.red),
+                              );
+                            }
+
+                            final userData =
+                                snapshot.data?.data() as Map<String, dynamic>?;
+                            final avatarBase64 = userData?['avatar'] as String?;
+                            return CircleAvatar(
+                              radius: 30,
+                              backgroundColor: Colors.blue.shade100,
+                              backgroundImage: (avatarBase64 != null &&
+                                      avatarBase64.isNotEmpty)
+                                  ? MemoryImage(Base64ImageService()
+                                      .decodeBase64Image(avatarBase64))
+                                  : null, // Display avatar if available
+                              child: (avatarBase64 == null ||
+                                      avatarBase64.isEmpty)
+                                  ? const Icon(Icons.person, color: Colors.blue)
+                                  : null, // Fallback to icon if no avatar
+                            );
+                          },
                         ),
                         const SizedBox(width: 12),
                         Expanded(
