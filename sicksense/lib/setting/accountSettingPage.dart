@@ -124,10 +124,18 @@ class _AccountSettingPageState extends State<AccountSettingPage> {
         'avatar': base64Image,
         'avatarUpdatedAt': FieldValue.serverTimestamp(),
       });
+      _reloadPage();
     } catch (e) {
       print('Error saving avatar: $e');
       rethrow; // Allow caller to handle error
     }
+  }
+
+  void _reloadPage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const AccountSettingPage()),
+    );
   }
 
   void _showSnackBar(String message) {
