@@ -309,7 +309,7 @@ class _LeftBarState extends State<LeftBar> {
                 );
               }
 
-              if (paymentSnapshot.data == false) {
+              if (paymentSnapshot.data == false && !isDoctor) {
                 return _buildPaymentPrompt(context, localizations);
               }
 
@@ -471,8 +471,26 @@ class _LeftBarState extends State<LeftBar> {
                   Expanded(
                     child: ListView(
                       children: [
-                        _buildWebSocketTile(
-                            context, localizations.chatWithAI, 20.0),
+                        // Conditionally show _buildWebSocketTile
+                        FutureBuilder<bool>(
+                          future: _isCurrentUserDoctor(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                            final isDoctor = snapshot.data ?? false;
+                            return isDoctor
+                                ? const SizedBox.shrink()
+                                : _buildWebSocketTile(
+                                    context, localizations.chatWithAI, 20.0);
+                          },
+                        ),
                         FutureBuilder<bool>(
                           future: _isCurrentUserDoctor(),
                           builder: (context, snapshot) {

@@ -143,14 +143,35 @@ class DoctorsListPage extends StatelessWidget {
                     'Timestamp': timestamp,
                   };
 
+                  final userDataToUpdate = {
+                    'UserId': currentUser.uid,
+                    'LastMessage': '',
+                    'Timestamp': timestamp,
+                  };
+
+                  // Get a reference to Firestore
+                  final firestore = FirebaseFirestore.instance;
+
+                  // Perform both updates in a batch for atomicity
+                  final batch = firestore.batch();
+
                   // Update the user's TextedDoctors list
-                  await FirebaseFirestore.instance
-                      .collection('User')
-                      .doc(currentUser.uid)
-                      .update({
+                  final currentUserDocRef =
+                      firestore.collection('User').doc(currentUser.uid);
+                  batch.update(currentUserDocRef, {
                     'TextedDoctors':
                         FieldValue.arrayUnion([doctorDataToUpdate]),
                   });
+
+                  // Update the doctor's TextedUsers list
+                  final doctorDocRef =
+                      firestore.collection('User').doc(doctorId);
+                  batch.update(doctorDocRef, {
+                    'TextedUsers': FieldValue.arrayUnion([userDataToUpdate]),
+                  });
+
+                  // Commit the batch
+                  await batch.commit();
 
                   // Close the dialog first
                   Navigator.of(dialogContext).pop();
